@@ -10,6 +10,7 @@ def pathfinding(filepath):
   treasures = []
   start = None
 
+  # get all important nodes
   for x in range(len(graph)):
     for y in range(len(graph[x])):
       cell_value = graph[x][y] 
@@ -22,20 +23,22 @@ def pathfinding(filepath):
       elif str(cell_value).isdigit() and cell_value != "0":
         treasures.append((x, y, int(cell_value)))
 
+  # if there is no start or no goals path cannot be found
   if (start == None or len(goals) <= 0):
     return False
 
   explored = []
+  # TODO: turn frontier into a priority queue
   frontier = [start]
   optimal_path = []
   optimal_path_cost = 0
 
+  # A* implementation
+  # TODO: we need to somehow consider how to gather at least 5 treasure points before finishing
   while True:
     leaf = frontier.pop()
-
     if leaf in goals:
       break
-
     explored.append (leaf)
     for node in neighbourhood(graph, leaf):
       curr_path_cost = leaf.path_cost + MOVING_COST + leaf.heuristic
@@ -55,6 +58,8 @@ def pathfinding(filepath):
 
 # TODO: implement the neighbourhood function, 
 # it should determine which nodes you can travel to
+# Should also determine heuristic of nodes, 
+# i did some research and recommend Manhattan distance: |leaf.x - goal.x| + |leaf.y - goal.y|
 def neighbourhood(graph, leaf):
   return []
 
