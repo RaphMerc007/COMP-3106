@@ -22,7 +22,7 @@ def pathfinding(filepath):
       elif str(cell_value).isdigit() and cell_value != "0":
         treasures.append((x, y, int(cell_value)))
 
-  print(graph, start, goals, walls, treasures)
+
   # TODO: Implement A* search algorithm here
   # For now, return placeholder values
   optimal_path = []  # Will contain the path from start to goal
@@ -39,4 +39,26 @@ def pathfinding(filepath):
 
 
 
-pathfinding("./Examples/Example0/grid.txt")
+pathfinding("/Users/raphaelmercier/Documents/COMP 3106/COMP-3106/A1/Examples/Example0/grid.txt")
+
+
+# uniform cost search pseudo
+def graph_search(graph, start_states, goal_states):
+  frontier = start_states
+  explored = []
+  while True:
+    if frontier == []:
+      return False
+
+    leaf = frontier.pop()
+
+    if leaf in goal_states:
+      return path
+
+    explored.append (leaf)
+    for node in neighbourhood (graph, leaf):
+      curr_path_cost = leaf.path_cost + edge_weight(leaf, node) 
+      if (node not in frontier and node not in explored or node in frontier and curr_path_cost < node.path_cost):
+        node.parent = leaf
+        node.path_cost = curr_path_cost 
+        frontier.append (node)
