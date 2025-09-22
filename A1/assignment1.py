@@ -1,5 +1,7 @@
 # Name this file to assignment1.py when you submit
 import pandas as pd
+import heapq
+
 MOVING_COST = 1
 # The pathfinding function must implement A* search to find the goal state
 def pathfinding(filepath):
@@ -36,18 +38,25 @@ def pathfinding(filepath):
   # A* implementation
   # TODO: we need to somehow consider how to gather at least 5 treasure points before finishing
   while True:
-    leaf = frontier.pop()
+    leaf = heapq.heappop(frontier)
 
     if leaf in goals:
       break
     explored.append(leaf)
     for node in neighbourhood(graph, explored, leaf):
       curr_path_cost = leaf.path_cost + MOVING_COST + leaf.heuristic
-      if (node not in frontier and node not in explored or node in frontier and curr_path_cost < node.path_cost + node.heuristic):
+      node = priority_queue_contains(frontier, node)
+      frontier_contains_node = node != None
+      explored_contains_node = priority_queue_contains(explored, node) != None
+      
+      if (not frontier_contains_node and not explored_contains_node or 
+      frontier_contains_node and curr_path_cost < node.path_cost + node.heuristic):
         node.parent = leaf
         node.path_cost = leaf.path_cost + MOVING_COST 
         node.heuristic = heuristic(node.position, goals[0].position)
-        frontier.append(node)
+        if (frontier_contains_node):
+          frontier.remove(node)
+        heapq.heappush(frontier, node)
 
 
   # optimal_path is a list of coordinate of squares visited (in order)
@@ -79,6 +88,12 @@ def heuristic(position, goal):
   # Manhattan distance
   return abs(position[0] - goal[0]) + abs(position[1] - goal[1])
 
+
+def priority_queue_contains(frontier, node):
+  for i in frontier:
+    if (i.position == node.position):
+      return i
+  return None
 
 
 class Node :
