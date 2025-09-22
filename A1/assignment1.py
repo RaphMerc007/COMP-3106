@@ -1,4 +1,5 @@
 # Name this file to assignment1.py when you submit
+from ast import mod
 import pandas as pd
 import heapq
 
@@ -16,62 +17,86 @@ def pathfinding(filepath):
   # Parse grid to find start, goals, walls, and treasures
   for x in range(len(graph)):
     for y in range(len(graph[x])):
+      graph[x][y] = str(graph[x][y])
       cell_value = graph[x][y] 
       if cell_value == "S": 
-        start = Node((x, y), "S", heuristic=heuristic((x, y), goals[0].position))
+        start = Node((x, y), type="S")
       elif cell_value == "G":
-        goals.append(Node((x, y), "G"))
+        goals.append(Node((x, y), type="G"))
       elif cell_value == "X":
-        walls.append(Node((x, y), "X"))
+        walls.append(Node((x, y), type="X"))
       elif str(cell_value).isdigit() and cell_value != "0":
-        treasures.append(Node((x, y), cell_value))
+        treasures.append(Node((x, y), type=cell_value))
+
+  start.heuristic = heuristic(start.position, goals, treasures, 0)
 
   # if there is no start or no goals path cannot be found
   if (start == None or len(goals) <= 0):
     return False
   
   treasure_points = 0
-  frontier = [start]  # Priority queue for A* search
   optimal_path = []
   optimal_path_cost = 0
-
+  num_states_explored = 0
+  leaf = start
+  frontier = []
   # Continue until all goals reached or treasure limit hit
-  while len(goals) > 0 and treasure_points < 5:
+  while len(goals) > 0 or treasure_points < 5:
+    if (len(frontier) > 0):
+      leaf = heapq.heappop(frontier)  # Get node with lowest f-cost
+
     explored = []
+    frontier = [leaf]  # Priority queue for A* search
 
     # A* search for next goal
     while True:
+      for f in frontier:
+        print(f.heuristic,f.path_cost, f.position, f.type, f.value, f.parent.position if f.parent else None)
       leaf = heapq.heappop(frontier)  # Get node with lowest f-cost
+      print("popped: ", leaf.position)
+      print("--------------------------------")
+      
+      if (len(goals) == 0):
+        raise Exception("All goals reached but treasure points < 5")
+
+      explored.append(leaf)
+      num_states_explored += 1
+      # Expand current node - check all valid neighbors
+      for node in neighbourhood(graph, explored, leaf):
+        curr_path_cost = leaf.path_cost + MOVING_COST + leaf.heuristic
+        node.heuristic = heuristic(node.position, goals, treasures, treasure_points)
+        # Add to frontier if new node or better path found
+        if (not node in frontier and not node in explored or 
+        node in frontier and curr_path_cost < node.path_cost + node.heuristic):
+          node.parent = leaf
+          node.path_cost = leaf.path_cost + MOVING_COST 
+          if (node in frontier):
+            frontier.remove(node)
+          heapq.heappush(frontier, node)
+
+
 
       if leaf in goals:  # Goal reached
         goals.remove(leaf)
         break
 
-      explored.append(leaf)
-      optimal_path_cost += leaf.path_cost
-      
-      # Expand current node - check all valid neighbors
-      for node in neighbourhood(graph, explored, leaf):
-        curr_path_cost = leaf.path_cost + MOVING_COST + leaf.heuristic
-        node = priority_queue_contains(frontier, node)
-        frontier_contains_node = node != None
-        explored_contains_node = priority_queue_contains(explored, node) != None
-        
-        # Add to frontier if new node or better path found
-        if (not frontier_contains_node and not explored_contains_node or 
-        frontier_contains_node and curr_path_cost < node.path_cost + node.heuristic):
-          node.parent = leaf
-          node.path_cost = leaf.path_cost + MOVING_COST 
-          node.heuristic = heuristic(node.position, goals[0].position)
-          if (frontier_contains_node):
-            frontier.remove(node)
-          heapq.heappush(frontier, node)
+      if (leaf in treasures):
+        treasures.remove(leaf)
+        treasure_points += leaf.value
+        break      
+  
 
+  # Build optimal path from leaf to start
+  while True:
+    optimal_path.insert(0, leaf.position)
+    if (leaf.parent == None):
+      break
+    leaf = leaf.parent
 
   # optimal_path is a list of coordinate of squares visited (in order)
   # optimal_path_cost is the cost of the optimal path
   # num_states_explored is the number of states explored during A* search
-  return optimal_path, optimal_path_cost, len(explored)
+  return optimal_path, len(optimal_path)*MOVING_COST-1, num_states_explored
 
 
 def neighbourhood(graph, explored, leaf):
@@ -96,28 +121,40 @@ def neighbourhood(graph, explored, leaf):
   return neighbours
 
 
-def heuristic(position, goal):
+def heuristic(position, goals, treasures, points):
   # Manhattan distance
   # TODO: we can use the value of the treasure to calculate the heuristic somehow....
-  return abs(position[0] - goal[0]) + abs(position[1] - goal[1])
 
+  min_distance = float('inf')
+  for goal in goals:
+    base_distance = abs(position[0] - goal.position[0]) + abs(position[1] - goal.position[1])
+    if base_distance < min_distance:
+      min_distance = base_distance
 
-def priority_queue_contains(frontier, node):
-  """Check if frontier already contains a node at the same position"""
-  for i in frontier:
-    if (i.position == node.position):
-      return i
-  return None
+  if treasures is None or len(treasures) == 0 or points >= 5:
+    return min_distance
+
+  # Find nearest treasure
+  nearest_value = 0
+  for treasure in treasures:
+    distance = abs(position[0] - treasure.position[0]) + abs(position[1] - treasure.position[1])
+    # Closer treasures have more influence
+    nearest_value = max(nearest_value, treasure.value/ (distance + 1))
+  print(base_distance, nearest_value)
+  
+  if base_distance - nearest_value < 0:
+    return base_distance
+  return base_distance - nearest_value
 
 
 class Node:
   """Node class for A* search with position, costs, and parent tracking"""
-  def __init__(self, position, type="0", path_cost=0, heuristic=0, parent=None, value=0, explored=False) -> None:
+  def __init__(self, position, type="0", path_cost=0, heuristic=0, parent=None, value=0) -> None:
     self.position = position
     self.path_cost = path_cost
     self.heuristic = heuristic
     self.parent = parent
-    self.explored = explored
+    self.type = type
 
     # Handle treasure cells (numeric values > 0)
     if (self.type.isdigit() and self.type != "0"):
@@ -128,6 +165,8 @@ class Node:
       self.value = value
 
   def __eq__(self, other):
+    if (other == None):
+      return False
     return self.position == other.position
     
   def __lt__(self, other):
@@ -143,4 +182,4 @@ class Node:
 
 
 
-pathfinding("./Examples/Example0/grid.txt")
+print(pathfinding("./Examples/Example0/grid.txt"))
