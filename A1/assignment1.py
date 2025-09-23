@@ -1,5 +1,6 @@
 # Name this file to assignment1.py when you submit
 from ast import mod
+from turtle import distance
 import pandas as pd
 import heapq
 
@@ -40,18 +41,19 @@ def pathfinding(filepath):
   num_states_explored = 0
   leaf = start
   frontier = []
+  goals_reached = False
   # Continue until all goals reached or treasure limit hit
-  while len(goals) > 0 or treasure_points < 5:
+  while not goals_reached or treasure_points < 5:
     if (len(frontier) > 0):
-      leaf = heapq.heappop(frontier)  # Get node with lowest f-cost
 
+      print("leaf:  ", leaf.position)
     explored = []
     frontier = [leaf]  # Priority queue for A* search
 
     # A* search for next goal
     while True:
       for f in frontier:
-        print(f.heuristic,f.path_cost, f.position, f.type, f.value, f.parent.position if f.parent else None)
+        print(f.heuristic,"+",f.path_cost, f.position, f.type, f.value)
       leaf = heapq.heappop(frontier)  # Get node with lowest f-cost
       print("popped: ", leaf.position)
       print("--------------------------------")
@@ -74,13 +76,14 @@ def pathfinding(filepath):
             frontier.remove(node)
           heapq.heappush(frontier, node)
 
-
-
-      if leaf in goals:  # Goal reached
-        goals.remove(leaf)
+      
+      if leaf in goals and treasure_points >= 5:  # Goal reached
+        goals_reached = True
         break
+      else:
+        goals_reached = False
 
-      if (leaf in treasures):
+      if leaf in treasures:
         treasures.remove(leaf)
         treasure_points += leaf.value
         break      
@@ -96,6 +99,7 @@ def pathfinding(filepath):
   # optimal_path is a list of coordinate of squares visited (in order)
   # optimal_path_cost is the cost of the optimal path
   # num_states_explored is the number of states explored during A* search
+  print(treasure_points)
   return optimal_path, len(optimal_path)*MOVING_COST-1, num_states_explored
 
 
@@ -120,32 +124,27 @@ def neighbourhood(graph, explored, leaf):
       neighbours.append(Node((x, y+1), graph[x][y+1]))
   return neighbours
 
-
 def heuristic(position, goals, treasures, points):
-  # Manhattan distance
-  # TODO: we can use the value of the treasure to calculate the heuristic somehow....
-
-  min_distance = float('inf')
-  for goal in goals:
-    base_distance = abs(position[0] - goal.position[0]) + abs(position[1] - goal.position[1])
-    if base_distance < min_distance:
-      min_distance = base_distance
-
-  if treasures is None or len(treasures) == 0 or points >= 5:
+  if points >= 5:
+    min_distance = float('inf')
+    for goal in goals:
+      goal_distance = abs(position[0] - goal.position[0]) + abs(position[1] - goal.position[1])
+      if goal_distance < min_distance:
+        min_distance = goal_distance
     return min_distance
+  else:
+    min_distance = float('inf')
+    treasure_value = 0
+    for treasure in treasures:
+      distance = abs(position[0] - treasure.position[0]) + abs(position[1] - treasure.position[1])
+      if distance < min_distance:
+        min_distance = distance
+        treasure_value = treasure.value
+    
+    treasure_heuristic = min_distance/treasure_value
+    print(treasure.position, position, treasure_heuristic, treasure.value, min_distance)
 
-  # Find nearest treasure
-  nearest_value = 0
-  for treasure in treasures:
-    distance = abs(position[0] - treasure.position[0]) + abs(position[1] - treasure.position[1])
-    # Closer treasures have more influence
-    nearest_value = max(nearest_value, treasure.value/ (distance + 1))
-  print(base_distance, nearest_value)
-  
-  if base_distance - nearest_value < 0:
-    return base_distance
-  return base_distance - nearest_value
-
+    return treasure_heuristic
 
 class Node:
   """Node class for A* search with position, costs, and parent tracking"""
