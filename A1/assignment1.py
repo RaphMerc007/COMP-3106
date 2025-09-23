@@ -1,8 +1,5 @@
 # Name this file to assignment1.py when you submit
-from ast import mod
-from re import T
-from turtle import distance
-from numpy import true_divide
+from math import sqrt
 import pandas as pd
 import heapq
 
@@ -36,7 +33,6 @@ def pathfinding(filepath):
   # if there is no start or no goals path cannot be found
   if (start == None or len(goals) <= 0):
     return False
-  
   treasure_points = 0
   optimal_path = []
   optimal_path_cost = 0
@@ -44,6 +40,9 @@ def pathfinding(filepath):
   leaf = start
   frontier = [leaf]
   goals_reached = False
+  all_explored = []
+  back_track_node = None
+  back_track_treasure=0
   # Continue until all goals reached or treasure limit hit
   while not goals_reached or treasure_points < 5:
     explored = []
@@ -54,7 +53,6 @@ def pathfinding(filepath):
       leaf = heapq.heappop(frontier)  # Get node with lowest f-cost
       print("popped: ", leaf.position)
       print("--------------------------------")
-      
       if (len(goals) == 0):
         raise Exception("All goals reached but treasure points < 5")
 
@@ -73,9 +71,15 @@ def pathfinding(filepath):
       if leaf in treasures:
         treasures.remove(leaf)
         treasure_points += leaf.value
+        if (back_track_node != None):
+          back_track_treasure += leaf.value
         explored = []
         frontier = []
         breaking = True
+      
+      if (leaf in all_explored):
+          back_track_node = leaf
+          back_track_treasure = 0
 
       # Expand current node - check all valid neighbors
       for node in neighbourhood(graph, explored, leaf):
@@ -86,16 +90,32 @@ def pathfinding(filepath):
         node in frontier and curr_path_cost < node.path_cost + node.heuristic):
           node.parent = leaf
           node.path_cost = leaf.path_cost + MOVING_COST 
+
           if (node in frontier):
             frontier.remove(node)
+          elif node not in all_explored:
+            all_explored.append(leaf)
+
           heapq.heappush(frontier, node)
 
       if breaking:
         break
   
-
+  skipping = False
   # Build optimal path from leaf to start
   while True:
+    if back_track_treasure>=5:
+      if leaf == back_track_node and not skipping:
+        skipping = True
+        leaf = leaf.parent
+        continue
+      elif leaf == back_track_node and skipping:
+        skipping = False
+      elif leaf != back_track_node and skipping:
+        leaf = leaf.parent
+
+        continue
+    
     optimal_path.insert(0, leaf.position)
     if (leaf.parent == None):
       break
@@ -104,7 +124,6 @@ def pathfinding(filepath):
   # optimal_path is a list of coordinate of squares visited (in order)
   # optimal_path_cost is the cost of the optimal path
   # num_states_explored is the number of states explored during A* search
-  print(treasure_points)
   return optimal_path, len(optimal_path)*MOVING_COST-1, num_states_explored
 
 
@@ -186,4 +205,4 @@ class Node:
 
 
 
-print(pathfinding("./Examples/Example3/grid.txt"))
+print(pathfinding("./Examples/Example0/grid.txt"))
