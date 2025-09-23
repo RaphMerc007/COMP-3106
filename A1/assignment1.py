@@ -1,6 +1,8 @@
 # Name this file to assignment1.py when you submit
 from ast import mod
+from re import T
 from turtle import distance
+from numpy import true_divide
 import pandas as pd
 import heapq
 
@@ -40,16 +42,11 @@ def pathfinding(filepath):
   optimal_path_cost = 0
   num_states_explored = 0
   leaf = start
-  frontier = []
+  frontier = [leaf]
   goals_reached = False
   # Continue until all goals reached or treasure limit hit
   while not goals_reached or treasure_points < 5:
-    if (len(frontier) > 0):
-
-      print("leaf:  ", leaf.position)
     explored = []
-    frontier = [leaf]  # Priority queue for A* search
-
     # A* search for next goal
     while True:
       for f in frontier:
@@ -61,8 +58,25 @@ def pathfinding(filepath):
       if (len(goals) == 0):
         raise Exception("All goals reached but treasure points < 5")
 
+      breaking = False
       explored.append(leaf)
       num_states_explored += 1
+
+      if leaf in goals and treasure_points >= 5:  # Goal reached
+        goals_reached = True
+        explored = []
+        frontier = []
+        breaking = True
+      else: # goal reached but not ready to end
+        goals_reached = False
+
+      if leaf in treasures:
+        treasures.remove(leaf)
+        treasure_points += leaf.value
+        explored = []
+        frontier = []
+        breaking = True
+
       # Expand current node - check all valid neighbors
       for node in neighbourhood(graph, explored, leaf):
         curr_path_cost = leaf.path_cost + MOVING_COST + leaf.heuristic
@@ -76,17 +90,8 @@ def pathfinding(filepath):
             frontier.remove(node)
           heapq.heappush(frontier, node)
 
-      
-      if leaf in goals and treasure_points >= 5:  # Goal reached
-        goals_reached = True
+      if breaking:
         break
-      else:
-        goals_reached = False
-
-      if leaf in treasures:
-        treasures.remove(leaf)
-        treasure_points += leaf.value
-        break      
   
 
   # Build optimal path from leaf to start
@@ -181,4 +186,4 @@ class Node:
 
 
 
-print(pathfinding("./Examples/Example0/grid.txt"))
+print(pathfinding("./Examples/Example3/grid.txt"))
