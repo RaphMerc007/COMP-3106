@@ -133,7 +133,7 @@ def heuristic(position, goals, treasures, points):
   if points >= 5:
     min_distance = float('inf')
     for goal in goals:
-      goal_distance = abs(position[0] - goal.position[0]) + abs(position[1] - goal.position[1])
+      goal_distance = sqrt((position[0] - goal.position[0])**2 + (position[1] - goal.position[1])**2)
       if goal_distance < min_distance:
         min_distance = goal_distance
     return min_distance
@@ -141,7 +141,7 @@ def heuristic(position, goals, treasures, points):
     min_distance = float('inf')
     treasure_value = 0
     for treasure in treasures:
-      distance = abs(position[0] - treasure.position[0]) + abs(position[1] - treasure.position[1])
+      distance = sqrt((position[0] - treasure.position[0])**2 + (position[1] - treasure.position[1])**2)
       if distance < min_distance:
         min_distance = distance
         treasure_value = treasure.value
