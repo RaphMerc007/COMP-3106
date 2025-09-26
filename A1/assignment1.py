@@ -81,24 +81,24 @@ def pathfinding(filepath):
            explored = []
            frontier = []
            breaking = True
-             if focus_treasure == leaf:
+           if focus_treasure == leaf:
              focus_treasure.focused = False
 
          # Expand current node - check all valid neighbors
-        for node in neighbourhood(graph, explored, leaf):
-          curr_path_cost = leaf.path_cost + MOVING_COST + leaf.heuristic
-          node.heuristic = heuristic(node.position, goals, current_treasures, treasure_points)
-          # Add to frontier if new node or better path found
-          if (not node in frontier and not node in explored or 
-          node in frontier and curr_path_cost < node.path_cost + node.heuristic):
-            node.parent = leaf
-            node.path_cost = leaf.path_cost + MOVING_COST 
-            if (node in frontier):
-              frontier.remove(node)
-            heapq.heappush(frontier, node)
+         for node in neighbourhood(graph, explored, leaf):
+           curr_path_cost = leaf.path_cost + MOVING_COST + leaf.heuristic
+           node.heuristic = heuristic(node.position, goals, current_treasures, treasure_points)
+           # Add to frontier if new node or better path found
+           if (not node in frontier and not node in explored or 
+           node in frontier and curr_path_cost < node.path_cost + node.heuristic):
+             node.parent = leaf
+             node.path_cost = leaf.path_cost + MOVING_COST 
+             if (node in frontier):
+               frontier.remove(node)
+             heapq.heappush(frontier, node)
 
-        if breaking:
-          break
+         if breaking:
+           break
     
     path = []
     path_cost = 0
