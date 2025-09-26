@@ -74,31 +74,30 @@ def pathfinding(filepath):
         else: # goal reached but not ready to end
           goals_reached = False
 
-         # pickup treasure only if focus is already found or it is the focus
-         if leaf in current_treasures and (not focus_treasure.focused or focus_treasure == leaf):
-           current_treasures.remove(leaf)
-           treasure_points += leaf.value
-           explored = []
-           frontier = []
-           breaking = True
-           if focus_treasure == leaf:
-             focus_treasure.focused = False
+        # pickup treasure only if focus is already found or it is the focus
+        if leaf in current_treasures and (not focus_treasure.focused or focus_treasure == leaf):
+          current_treasures.remove(leaf)
+          treasure_points += leaf.value
+          explored = []
+          frontier = []
+          breaking = True
+          focus_treasure.focused = False
 
-         # Expand current node - check all valid neighbors
-         for node in neighbourhood(graph, explored, leaf):
-           curr_path_cost = leaf.path_cost + MOVING_COST + leaf.heuristic
-           node.heuristic = heuristic(node.position, goals, current_treasures, treasure_points)
-           # Add to frontier if new node or better path found
-           if (not node in frontier and not node in explored or 
-           node in frontier and curr_path_cost < node.path_cost + node.heuristic):
-             node.parent = leaf
-             node.path_cost = leaf.path_cost + MOVING_COST 
-             if (node in frontier):
-               frontier.remove(node)
-             heapq.heappush(frontier, node)
+        # Expand current node - check all valid neighbors
+        for node in neighbourhood(graph, explored, leaf):
+          curr_path_cost = leaf.path_cost + MOVING_COST + leaf.heuristic
+          node.heuristic = heuristic(node.position, goals, current_treasures, treasure_points)
+          # Add to frontier if new node or better path found
+          if (not node in frontier and not node in explored or 
+          node in frontier and curr_path_cost < node.path_cost + node.heuristic):
+            node.parent = leaf
+            node.path_cost = leaf.path_cost + MOVING_COST 
+            if (node in frontier):
+              frontier.remove(node)
+            heapq.heappush(frontier, node)
 
-         if breaking:
-           break
+        if breaking:
+          break
     
     path = []
     path_cost = 0
@@ -152,7 +151,7 @@ def heuristic(position, goals, treasures, points):
   if points >= 5:
     min_distance = float('inf')
     for goal in goals:
-      goal_distance = sqrt((position[0] - goal.position[0])**2 + (position[1] - goal.position[1])**2)
+      goal_distance = abs(position[0] - goal.position[0]) + abs(position[1] - goal.position[1])
       if goal_distance < min_distance:
         min_distance = goal_distance
     return min_distance
@@ -173,18 +172,16 @@ def heuristic(position, goals, treasures, points):
 def get_closest_treasures_num(treasures, position):
   NUMBER_OF_TREASURES_CONSIDERED = 4
 
-  # Create list of (distance, treasure) tuples for sorting
-  treasure_distances = []
+  treasures_pq = []
   for treasure in treasures:
     distance = abs(position[0] - treasure.position[0]) + abs(position[1] - treasure.position[1])
-    treasure_distances.append((distance, treasure))
+    treasure.path_cost = distance
+    heapq.heappush(treasures_pq, treasure)
 
-  # Sort by distance and take the closest ones
-  treasure_distances.sort(key=lambda x: x[0])
-  
-  result = []
-  for i in range(min(NUMBER_OF_TREASURES_CONSIDERED, len(treasures))): 
-    result.append(treasure_distances[i][1])
+  result=[]
+  for _ in range(min(NUMBER_OF_TREASURES_CONSIDERED, len(treasures))): 
+    t = heapq.heappop(treasures_pq)
+    result.append(t)
 
   return result
 
@@ -225,4 +222,4 @@ class Node:
 
 
 
-print(pathfinding("./Examples/Example0/grid.txt"))
+print(pathfinding("./Examples/Example2/grid.txt"))
