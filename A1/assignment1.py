@@ -74,16 +74,17 @@ def pathfinding(filepath):
         else: # goal reached but not ready to end
           goals_reached = False
 
-        # pickup treasure only if focus is already found or it is the focus
-        if leaf in current_treasures and (not focus_treasure.focused or focus_treasure == leaf):
-          current_treasures.remove(leaf)
-          treasure_points += leaf.value
-          explored = []
-          frontier = []
-          breaking = True
-          focus_treasure.focused = False
+         # pickup treasure only if focus is already found or it is the focus
+         if leaf in current_treasures and (not focus_treasure.focused or focus_treasure == leaf):
+           current_treasures.remove(leaf)
+           treasure_points += leaf.value
+           explored = []
+           frontier = []
+           breaking = True
+             if focus_treasure == leaf:
+             focus_treasure.focused = False
 
-        # Expand current node - check all valid neighbors
+         # Expand current node - check all valid neighbors
         for node in neighbourhood(graph, explored, leaf):
           curr_path_cost = leaf.path_cost + MOVING_COST + leaf.heuristic
           node.heuristic = heuristic(node.position, goals, current_treasures, treasure_points)
@@ -172,16 +173,18 @@ def heuristic(position, goals, treasures, points):
 def get_closest_treasures_num(treasures, position):
   NUMBER_OF_TREASURES_CONSIDERED = 4
 
-  treasures_pq = []
+  # Create list of (distance, treasure) tuples for sorting
+  treasure_distances = []
   for treasure in treasures:
     distance = abs(position[0] - treasure.position[0]) + abs(position[1] - treasure.position[1])
-    treasure.path_cost = distance
-    heapq.heappush(treasures_pq, treasure)
+    treasure_distances.append((distance, treasure))
 
-  result=[]
-  for _ in range(min(NUMBER_OF_TREASURES_CONSIDERED, len(treasures))): 
-    t = heapq.heappop(treasures_pq)
-    result.append(t)
+  # Sort by distance and take the closest ones
+  treasure_distances.sort(key=lambda x: x[0])
+  
+  result = []
+  for i in range(min(NUMBER_OF_TREASURES_CONSIDERED, len(treasures))): 
+    result.append(treasure_distances[i][1])
 
   return result
 
