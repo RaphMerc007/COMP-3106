@@ -2,7 +2,7 @@
 import pandas as pd
 import heapq
 
-VERBOSE = True
+VERBOSE = False
 MOVING_COST = 1
 # The pathfinding function must implement A* search to find the goal state
 def pathfinding(filepath):
@@ -131,6 +131,10 @@ def pathfinding(filepath):
 
       retrying =  False
       
+      total_path_cost = leaf.path_cost
+      if leaf.path_cost == get_closest_goal(start.position, goals):
+        return get_path(leaf), total_path_cost, num_states_explored
+
       # Sort picked_up_treasures from high to low value (so we remove high-value ones first to keep low-value ones)
       sorted_treasures = sorted(picked_up_treasures, key=lambda x: x.value, reverse=True)
       for t in sorted_treasures:        
@@ -144,26 +148,13 @@ def pathfinding(filepath):
       if retrying:
         continue
       
-      path = []
-      path_cost = 0
-      # Build optimal path from leaf to start
-      while True:
-        path.insert(0, leaf.position)
-        if (leaf.parent == None):
-          break
-        leaf = leaf.parent
-
-      path_cost = len(path)*MOVING_COST-1
-
+      
       # get best path of the different attempts
-      if path_cost < optimal_path_cost:
-        optimal_path_cost = path_cost
-        optimal_path = path
+      if total_path_cost < optimal_path_cost:
+        optimal_path_cost = total_path_cost
+        optimal_path = get_path(leaf)
       
       focus_treasure.focused = False
-      
-      if VERBOSE:
-        print(path, path_cost)
       
       break
 
@@ -172,6 +163,17 @@ def pathfinding(filepath):
   # optimal_path_cost is the cost of the optimal path
   # num_states_explored is the number of states explored during A* search
   return optimal_path, optimal_path_cost, num_states_explored
+
+def get_path(leaf):
+  path = []
+  # Build optimal path from leaf to start
+  while True:
+    path.insert(0, leaf.position)
+    if (leaf.parent == None):
+      break
+    leaf = leaf.parent
+
+  return path
 
 
 def neighbourhood(graph, explored, leaf):
@@ -195,14 +197,18 @@ def neighbourhood(graph, explored, leaf):
       neighbours.append(Node((x, y+1), graph[x][y+1]))
   return neighbours
 
+def get_closest_goal(position, goals):
+  min_distance = float('inf')
+  for goal in goals:
+    goal_distance = abs(position[0] - goal.position[0]) + abs(position[1] - goal.position[1])
+    if goal_distance < min_distance:
+      min_distance = goal_distance
+  return min_distance
+
+
 def heuristic(position, goals, treasures, points):
   if points >= 5:
-    min_distance = float('inf')
-    for goal in goals:
-      goal_distance = abs(position[0] - goal.position[0]) + abs(position[1] - goal.position[1])
-      if goal_distance < min_distance:
-        min_distance = goal_distance
-    return min_distance
+    return get_closest_goal(position, goals)
   else:
     min_heuristic = float('inf')
     for treasure in treasures:
@@ -274,8 +280,8 @@ class Node:
 
 
 
-# for i in range(4):
-#   print("Example", i,":")
-#   print(pathfinding(f"./Examples/Example{i}/grid.txt"))
+for i in range(4):
+  print("Example", i,":")
+  print(pathfinding(f"./Examples/Example{i}/grid.txt"))
 
-print(pathfinding(f"./Examples/Example3/grid.txt"))
+# print(pathfinding(f"./Examples/Example3/grid.txt"))
