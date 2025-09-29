@@ -70,8 +70,12 @@ def pathfinding(filepath):
       # Continue until all goals reached or treasure limit hit
       while not goals_reached or treasure_points < 5:
         explored = []
+        if len(frontier) == 0:
+          break
         # A* search for next goal
         while True:
+          if len(frontier) == 0:
+            break
 
           if VERBOSE:
             print("treasure points: ", treasure_points)
