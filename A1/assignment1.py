@@ -13,9 +13,7 @@ def pathfinding(filepath):
   # Read csv file
   csv = pd.read_csv(filepath, header=None)  # header=None since there are no column headers
   graph = csv.values.tolist()  # Convert DataFrame to 2D list
-  goals = []
-  walls = []
-  treasures = []
+  goals, treasures, walls = [], [], []
   start = None
 
   # Parse grid to find start, goals, walls, and treasures
@@ -131,6 +129,7 @@ def pathfinding(filepath):
             current_treasures.remove(leaf)
             picked_up_treasures.add(leaf)
             treasure_points += leaf.value
+            leaf.accumulated_treasure_count += leaf.value
             explored = []
             frontier = []
             breaking = True
@@ -139,6 +138,10 @@ def pathfinding(filepath):
           # check all valid neighbors
           for node in neighbourhood(graph, explored, leaf):
             curr_path_cost = leaf.path_cost + MOVING_COST
+
+            # inherit accumulated treasure count
+            node.accumulated_treasure_count = leaf.accumulated_treasure_count
+
             node.heuristic = heuristic(node.position, goals, current_treasures, treasure_points)
 
             leaf_fcost = curr_path_cost + leaf.heuristic
@@ -164,8 +167,8 @@ def pathfinding(filepath):
       total_path_cost = leaf.path_cost
 
       # if the path cost == the distance from the closest goal to the start, you have found the fastest possible route
-      if leaf.path_cost == get_closest_goal(start.position, goals):
-        return get_path(leaf), total_path_cost, num_states_explored
+      # if leaf.path_cost == get_closest_goal(start.position, goals):
+      #   return get_path(leaf), total_path_cost, num_states_explored
 
       retrying =  False
 
@@ -282,13 +285,18 @@ def heuristic(position, goals, treasures, points):
       if treasure_heuristic < min_heuristic:
         min_heuristic = treasure_heuristic
 
-    return min_heuristic
+    # Uncomment this after testing to reinsert a heuristic value
+    # return min_heuristic
+    return 0
 
 
 # get set of closest treasures to focus on in start state
 def get_closest_treasures_num(treasures, position):
   # this is the maximum number of treasures to be returned by the function 
-  NUMBER_OF_TREASURES_CONSIDERED = 4
+  NUMBER_OF_TREASURES_CONSIDERED = len(treasures)
+  print("# of treasures considered: " , NUMBER_OF_TREASURES_CONSIDERED)
+  # NUMBER_OF_TREASURES_CONSIDERED = 4
+
 
   treasures_pq = []
   # get the treasures distances from a given positions
@@ -308,7 +316,7 @@ def get_closest_treasures_num(treasures, position):
 
 class Node:
   """Node class for A* search with position, costs, and parent tracking"""
-  def __init__(self, position, type="0", path_cost=0, heuristic=0, parent=None, value=0, focused=False, ignoring=False) -> None:
+  def __init__(self, position, type="0", path_cost=0, heuristic=0, parent=None, value=0, focused=False, ignoring=False, accumulated_treasure_count=0) -> None:
     self.position = position
     self.path_cost = path_cost
     self.heuristic = heuristic
@@ -316,6 +324,7 @@ class Node:
     self.type = type
     self.focused = focused
     self.ignoring = ignoring
+    self.accumulated_treasure_count = accumulated_treasure_count
 
     # Handle treasure cells
     if (self.type.isdigit() and self.type != "0"):
@@ -325,15 +334,15 @@ class Node:
       self.type = type
       self.value = value
 
-  # determine equality using position
+  # determine equality using position and treasure points accumulated
   def __eq__(self, other):
     if (other == None):
       return False
-    return self.position == other.position
+    return self.position == other.position and self.accumulated_treasure_count == other.accumulated_treasure_count
     
   # Make Node hashable so it can be used in sets
   def __hash__(self):
-    return hash(self.position)
+    return hash((self.position, self.accumulated_treasure_count))
   
   # Define less-than for priority queue sorting by f-cost (g + h)
   def __lt__(self, other):
@@ -347,8 +356,8 @@ class Node:
 
 
 # show all examples
-for i in range(4):
+for i in range(5):
   print("Example", i,":")
   print(pathfinding(f"./Examples/Example{i}/grid.txt"))
 
-# print(pathfinding(f"./Examples/Example3/grid.txt"))
+# print(pathfinding(f"./Examples/Example2/grid.txt"))
