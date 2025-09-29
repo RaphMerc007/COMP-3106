@@ -2,6 +2,7 @@
 import pandas as pd
 import heapq
 
+VERBOSE = True
 MOVING_COST = 1
 # The pathfinding function must implement A* search to find the goal state
 def pathfinding(filepath):
@@ -35,89 +36,132 @@ def pathfinding(filepath):
   optimal_path = []
   optimal_path_cost = float('inf')
   num_states_explored = 0
-  
+  picked_up_treasures = set()
+
   # get closest treasures to check path from
   for focus_treasure in focus_treasures:
-    # copy treasures array because gets removed during search
-    current_treasures = treasures.copy()
-    # determine focus
-    focus_treasure.focused = True
-    start.heuristic = heuristic(start.position, goals, current_treasures, 0)
-    leaf = start
-    goals_reached = False
-    frontier = [leaf]
-    treasure_points = 0
-
-  # Continue until all goals reached or treasure limit hit
-    while not goals_reached or treasure_points < 5:
-      explored = []
-      # A* search for next goal
-      while True:
-        for f in frontier:
-          print(f.heuristic,"+",f.path_cost, f.position, f.type, f.value)
-        leaf = heapq.heappop(frontier)  # Get node with lowest f-cost
-        print("popped: ", leaf.position)
-        print("--------------------------------")
-        
-        if (len(goals) == 0):
-          raise Exception("All goals reached but treasure points < 5")
-
-        breaking = False
-        explored.append(leaf)
-        num_states_explored += 1
-
-        if leaf in goals and treasure_points >= 5:  # Goal reached
-          goals_reached = True
-          explored = []
-          frontier = []
-          breaking = True
-        else: # goal reached but not ready to end
-          goals_reached = False
-
-        # pickup treasure only if focus is already found or it is the focus
-        if leaf in current_treasures and (not focus_treasure.focused or focus_treasure == leaf):
-          current_treasures.remove(leaf)
-          treasure_points += leaf.value
-          explored = []
-          frontier = []
-          breaking = True
-          focus_treasure.focused = False
-
-        # Expand current node - check all valid neighbors
-        for node in neighbourhood(graph, explored, leaf):
-          curr_path_cost = leaf.path_cost + MOVING_COST + leaf.heuristic
-          node.heuristic = heuristic(node.position, goals, current_treasures, treasure_points)
-          # Add to frontier if new node or better path found
-          if (not node in frontier and not node in explored or 
-          node in frontier and curr_path_cost < node.path_cost + node.heuristic):
-            node.parent = leaf
-            node.path_cost = leaf.path_cost + MOVING_COST 
-            if (node in frontier):
-              frontier.remove(node)
-            heapq.heappush(frontier, node)
-
-        if breaking:
-          break
-    
-    path = []
-    path_cost = 0
-    # Build optimal path from leaf to start
     while True:
-      path.insert(0, leaf.position)
-      if (leaf.parent == None):
+      if VERBOSE:
+        print("focused treasure:", focus_treasure.position)
+
+      # copy treasures array because gets removed during search
+      current_treasures = treasures.copy()
+      breaking = False
+      for t in picked_up_treasures:
+
+        if t.ignoring:
+          if focus_treasure == t:
+            breaking = True
+            break
+          current_treasures.remove(t)
+          if VERBOSE:
+            print("Removing:", t.position)
+
+      if breaking:
         break
-      leaf = leaf.parent
+      # determine focus
+      focus_treasure.focused = True
+      start.heuristic = heuristic(start.position, goals, current_treasures, 0)
+      leaf = start
+      goals_reached = False
+      frontier = [leaf]
+      treasure_points = 0
 
-    path_cost = len(path)*MOVING_COST-1
+      # Continue until all goals reached or treasure limit hit
+      while not goals_reached or treasure_points < 5:
+        explored = []
+        # A* search for next goal
+        while True:
 
-    # get best path of the different attempts
-    if path_cost < optimal_path_cost:
-      optimal_path_cost = path_cost
-      optimal_path = path
-    
-    focus_treasure.focused = False
-  
-    print(path, path_cost)
+          if VERBOSE:
+            print("treasure points: ", treasure_points)
+            for f in frontier:
+              print(f.heuristic,"+",f.path_cost, f.position, f.type, f.value)
+
+          leaf = heapq.heappop(frontier)  # Get node with lowest f-cost
+
+          if VERBOSE:
+            print("popped: ", leaf.position)
+            print("--------------------------------")
+            input()
+          if (len(goals) == 0):
+            raise Exception("All goals reached but treasure points < 5")
+
+          breaking = False
+          explored.append(leaf)
+          num_states_explored += 1
+
+          if leaf in goals and treasure_points >= 5:  # Goal reached
+            goals_reached = True
+            explored = []
+            frontier = []
+            breaking = True
+          else: # goal reached but not ready to end
+            goals_reached = False
+
+          # pickup treasure only if focus is already found or it is the focus
+          if leaf in current_treasures and (not focus_treasure.focused or focus_treasure == leaf):
+            current_treasures.remove(leaf)
+            picked_up_treasures.add(leaf)
+            treasure_points += leaf.value
+            explored = []
+            frontier = []
+            breaking = True
+            focus_treasure.focused = False
+
+          # Expand current node - check all valid neighbors
+          for node in neighbourhood(graph, explored, leaf):
+            curr_path_cost = leaf.path_cost + MOVING_COST + leaf.heuristic
+            node.heuristic = heuristic(node.position, goals, current_treasures, treasure_points)
+            # Add to frontier if new node or better path found
+            if ((not node in frontier and not node in explored) or 
+            (node in frontier and curr_path_cost < node.path_cost + node.heuristic)):
+              node.parent = leaf
+              node.path_cost = leaf.path_cost + MOVING_COST 
+              if (node in frontier):
+                frontier.remove(node)
+              heapq.heappush(frontier, node)
+
+          if breaking:
+            break
+
+      retrying =  False
+      
+      # Sort picked_up_treasures from high to low value (so we remove high-value ones first to keep low-value ones)
+      sorted_treasures = sorted(picked_up_treasures, key=lambda x: x.value, reverse=True)
+      for t in sorted_treasures:        
+        if treasure_points - t.value >= 5:
+          treasure_points -= t.value
+          t.ignoring = True
+          retrying = True
+          if VERBOSE:
+            print(t.value, "is extra")
+      
+      if retrying:
+        continue
+      
+      path = []
+      path_cost = 0
+      # Build optimal path from leaf to start
+      while True:
+        path.insert(0, leaf.position)
+        if (leaf.parent == None):
+          break
+        leaf = leaf.parent
+
+      path_cost = len(path)*MOVING_COST-1
+
+      # get best path of the different attempts
+      if path_cost < optimal_path_cost:
+        optimal_path_cost = path_cost
+        optimal_path = path
+      
+      focus_treasure.focused = False
+      
+      if VERBOSE:
+        print(path, path_cost)
+      
+      break
 
 
   # optimal_path is a list of coordinate of squares visited (in order)
@@ -188,13 +232,14 @@ def get_closest_treasures_num(treasures, position):
 
 class Node:
   """Node class for A* search with position, costs, and parent tracking"""
-  def __init__(self, position, type="0", path_cost=0, heuristic=0, parent=None, value=0, focused = False) -> None:
+  def __init__(self, position, type="0", path_cost=0, heuristic=0, parent=None, value=0, focused=False, ignoring=False) -> None:
     self.position = position
     self.path_cost = path_cost
     self.heuristic = heuristic
     self.parent = parent
     self.type = type
     self.focused = focused
+    self.ignoring = ignoring
 
     # Handle treasure cells (numeric values > 0)
     if (self.type.isdigit() and self.type != "0"):
@@ -209,6 +254,10 @@ class Node:
       return False
     return self.position == other.position
     
+  def __hash__(self):
+    """Make Node hashable so it can be used in sets"""
+    return hash(self.position)
+    
   def __lt__(self, other):
     """Define less-than for priority queue sorting by f-cost (g + h)"""
     return self.heuristic + self.path_cost < other.heuristic + other.path_cost
@@ -221,5 +270,8 @@ class Node:
 
 
 
+# for i in range(4):
+#   print("Example", i,":")
+#   print(pathfinding(f"./Examples/Example{i}/grid.txt"))
 
-print(pathfinding("./Examples/Example2/grid.txt"))
+print(pathfinding(f"./Examples/Example3/grid.txt"))
