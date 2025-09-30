@@ -3,12 +3,11 @@ from time import sleep
 import pandas as pd
 import heapq
 
-from pandas.core.ops import invalid
 
 # printing frontier step by step
 VERBOSE = False
 # cool visualization
-VISUAL = True
+VISUAL = False
 
 # cost of moving from one node to the other
 MOVING_COST = 1
@@ -52,17 +51,16 @@ def pathfinding(filepath):
   optimal_path_cost = float('inf')
   num_states_explored = 0
   picked_up_treasures = set()
-
+  
   # considers multiple different branches by selecting which treasure to go to first
   for focus_treasure in focus_treasures:
 
     while True:
       if VERBOSE:
         print("focused treasure:", focus_treasure.position)
-
+        
       # copy treasures array because gets removed during search
       current_treasures = treasures.copy()
-
       # determine which treasures will be ignored
       # treasures are ignored if they are not needed to reach 5 points
       breaking = False
@@ -77,6 +75,8 @@ def pathfinding(filepath):
           
           if VERBOSE:
             print("Removing:", t.position, t.value)
+      
+
 
       # do not continue: focus_treasure == t
       if breaking:
@@ -88,6 +88,7 @@ def pathfinding(filepath):
       goals_reached = False
       frontier = [leaf]
       treasure_points = 0
+      treasure_points_seen = 0
       invalid_path = False
       # Continue until all goals reached or treasure limit hit
       while not goals_reached or treasure_points < 5:
@@ -114,7 +115,7 @@ def pathfinding(filepath):
           leaf = heapq.heappop(frontier)  
           
           if VISUAL:
-            print_map(0.1, graph, leaf, frontier, explored, walls, current_treasures, start, goals)
+            print_map(0.01, graph, leaf, frontier, explored, walls, current_treasures, start, goals)
 
 
             if VERBOSE:
@@ -141,17 +142,21 @@ def pathfinding(filepath):
           else: # goal reached but not ready to end
             goals_reached = False
 
-          # pickup treasure only if focus is already found or it is the focus
-          if leaf in current_treasures and (not focus_treasure.focused or focus_treasure == leaf):
-            current_treasures.remove(leaf)
-            picked_up_treasures.add(leaf)
-            if treasure_points < 5:
-              explored = []
-              frontier = []
-              breaking = True
-              focus_treasure.focused = False
+          # if leaf in treasure and that treasure is being focused on
+          for t in current_treasures:
+            if t == leaf:
+              if t.focused:
+                current_treasures.remove(leaf)
+                picked_up_treasures.add(leaf)
+                if treasure_points < 5:
+                  explored = []
+                  frontier = []
+                  breaking = True
+                t.focused = False
+                treasure_points += leaf.value
+              if t not in picked_up_treasures:
+                treasure_points_seen += leaf.value
 
-            treasure_points += leaf.value
 
           # check all valid neighbors
           for node in neighbourhood(graph, explored, leaf):
@@ -188,19 +193,19 @@ def pathfinding(filepath):
           print_map(3, graph, leaf, frontier, explored, walls, current_treasures, start, goals, path)
 
       # if the path cost == the distance from the closest goal to the start, you have found the fastest possible route
-      if leaf.path_cost == get_closest_goal(start.position, goals):
+      if leaf.path_cost == get_distance_to_closest_goal(start.position, goals):
         return get_path(leaf), total_path_cost, num_states_explored
 
       retrying =  False
 
       # Sort picked_up_treasures from high to low value
       sorted_treasures = sorted(picked_up_treasures, key=lambda x: x.value, reverse=True)
-
+  
       # if we have treasures that were picked up but are not necessary to achieve 5 treasure points, 
       # we should try again with the same original path but without considering the extra treasures
-      for t in sorted_treasures:        
-        if treasure_points - t.value >= 5 and not t.ignoring:
-          treasure_points -= t.value
+      for t in sorted_treasures:     
+        if treasure_points_seen - t.value >= 5 and not t.ignoring:
+          treasure_points_seen -= t.value
           t.ignoring = True
           retrying = True
           if VERBOSE:
@@ -260,7 +265,7 @@ def neighbourhood(graph, explored, leaf):
   return neighbours
 
 # get the closest goal from a given position
-def get_closest_goal(position, goals):
+def get_distance_to_closest_goal(position, goals):
   min_distance = float('inf')
   
   for goal in goals:
@@ -277,16 +282,16 @@ def heuristic(position, goals, treasures, points):
   # if grabbed all treasure points, 
   # heuristic = distance from closest goal
   if points >= 5:
-    return get_closest_goal(position, goals)
+    return get_distance_to_closest_goal(position, goals)
 
   # if still looking for treasures ignore, 
   # heuristic = (distance from closest treasure) / (value of closest treasure)
   else:
+    t = None
     min_heuristic = float('inf')
     for treasure in treasures:
       distance = abs(position[0] - treasure.position[0]) + abs(position[1] - treasure.position[1])
-      treasure_heuristic = distance/treasure.value
-     
+      treasure_heuristic = distance/( get_distance_to_closest_goal(treasure.position, goals)+1)
       # if there exist a treasure which is our focus, 
       # let the heuristic depend on this treasure
       if treasure.focused:
@@ -294,7 +299,9 @@ def heuristic(position, goals, treasures, points):
 
       if treasure_heuristic < min_heuristic:
         min_heuristic = treasure_heuristic
+        t = treasure
 
+    t.focused = True
     return min_heuristic
 
 
@@ -318,6 +325,15 @@ def get_closest_treasures_num(treasures, position):
 
 class Node:
   """Node class for A* search with position, costs, and parent tracking"""
+
+  # position: tuple of (x, y)
+  # type: string of the type of the node
+  # path_cost: cost to reach the node
+  # heuristic: heuristic value of the node
+  # parent: parent node
+  # value: value of the node
+  # focused: if the node is being focused on (all other nodes will be ignored until found)
+  # ignoring: if the node is ignoring (the treasure will be ignored when determining the heuristic)
   def __init__(self, position, type="0", path_cost=0, heuristic=0, parent=None, value=0, focused=False, ignoring=False) -> None:
     self.position = position
     self.path_cost = path_cost
@@ -389,7 +405,7 @@ def print_map(time, graph, leaf, frontier, explored, walls, current_treasures, s
 
 # show all examples
 if VERBOSE or VISUAL:
-  print(pathfinding(f"./Examples/Example0/grid.txt"))
+  print(pathfinding(f"./Examples/Example3/grid.txt"))
 else:
   for i in range(4):
     print("Example", i,":")
