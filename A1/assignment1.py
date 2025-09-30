@@ -215,7 +215,7 @@ def get_path(leaf):
 
 # Get valid adjacent cells (up, down, left, right) that aren't walls or explored
 def neighbourhood(graph, explored, leaf):
-    x = leaf.position[0]
+  x = leaf.position[0]
   y = leaf.position[1]
   neighbours = []
   
