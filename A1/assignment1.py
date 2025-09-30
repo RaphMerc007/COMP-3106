@@ -3,7 +3,7 @@ import pandas as pd
 import heapq
 
 # remove to see only final results
-VERBOSE = False
+VERBOSE = True
 
 # cost of moving from one node to the other
 MOVING_COST = 1
@@ -212,38 +212,27 @@ def get_path(leaf):
 
   return path
 
+
 # Get valid adjacent cells (up, down, left, right) that aren't walls or explored
 def neighbourhood(graph, explored, leaf):
-  x = leaf.position[0]
+    x = leaf.position[0]
   y = leaf.position[1]
   neighbours = []
   
-  # if node is not a wall and it is not explored
-  is_neighbour = lambda X,Y: {
-    graph[X][Y] != "X" and
-    Node((X, Y)) not in explored
-  }
-
-  # if node is a neighbour append it
-  add_neighbour = lambda X,Y:{
-    neighbours.append(Node((X,Y), graph[X][Y])) 
-    if is_neighbour(X,Y) 
-    else None
-  }
   # Check all 4 directions
-
-  if (x > 0):  # left
-    add_neighbour(x-1,y)
-
-  if (y > 0):  # up
-    add_neighbour(x,y-1)
-
-  if (x < len(graph)-1):  # right
-    add_neighbour(x+1,y)
-
-  if (y < len(graph[x])-1):  # down
-    add_neighbour(x,y+1)
-
+  # if node is not a wall and it is not explored append it to neighbourhood
+  if (x > 0):  # Up
+    if (graph[x-1][y] != "X" and Node((x-1, y)) not in explored):
+      neighbours.append(Node((x-1, y), graph[x-1][y]))
+  if (y > 0):  # Left
+    if (graph[x][y-1] != "X" and Node((x, y-1)) not in explored):
+      neighbours.append(Node((x, y-1), graph[x][y-1]))
+  if (x < len(graph)-1):  # Down
+    if (graph[x+1][y] != "X" and Node((x+1, y)) not in explored):
+      neighbours.append(Node((x+1, y), graph[x+1][y]))
+  if (y < len(graph[x])-1):  # Right
+    if (graph[x][y+1] != "X" and Node((x, y+1)) not in explored):
+      neighbours.append(Node((x, y+1), graph[x][y+1]))
   return neighbours
 
 # get the closest goal from a given position
@@ -347,8 +336,8 @@ class Node:
 
 
 # show all examples
-for i in range(4):
-  print("Example", i,":")
-  print(pathfinding(f"./Examples/Example{i}/grid.txt"))
+# for i in range(4):
+#   print("Example", i,":")
+#   print(pathfinding(f"./Examples/Example{i}/grid.txt"))
 
-# print(pathfinding(f"./Examples/Example3/grid.txt"))
+print(pathfinding(f"./Examples/Example3/grid.txt"))
