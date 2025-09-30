@@ -1,11 +1,14 @@
 # Name this file to assignment1.py when you submit
+from time import sleep
 import pandas as pd
 import heapq
 
 from pandas.core.ops import invalid
 
-# remove to see only final results
+# printing frontier step by step
 VERBOSE = False
+# cool visualization
+VISUAL = True
 
 # cost of moving from one node to the other
 MOVING_COST = 1
@@ -79,9 +82,6 @@ def pathfinding(filepath):
       if breaking:
         break
 
-
-
-
       focus_treasure.focused = True
       start.heuristic = heuristic(start.position, goals, current_treasures, 0)
       leaf = start
@@ -113,32 +113,13 @@ def pathfinding(filepath):
           # Get node with lowest f-cost
           leaf = heapq.heappop(frontier)  
           
-          if VERBOSE:
-            for x in range(len(graph)):
-              for y in range(len(graph[x])):
-                if Node((x,y))==leaf:
-                  print("* ",end="")
-                elif Node((x,y)) in frontier:
-                  print(". ",end="")
-                elif Node((x,y)) in explored:
-                  print("$ ",end="")
-                  
-                elif Node((x,y)) in walls:
-                  print("X ",end="")
-                elif Node((x,y)) in current_treasures:
-                  for t in current_treasures:
-                    if t == Node((x,y)):
-                      print(f"{t.value} ",end="")
-                elif Node((x,y)) == start:
-                  print("S ",end="")
-                elif Node((x,y)) in goals:
-                  print("G ",end="")
-                else:
-                  print("  ",end="")
-              print()
-            
-            for t in current_treasures:
-              print (t.value, t.position)
+          if VISUAL:
+            print_map(0.1, graph, leaf, frontier, explored, walls, current_treasures, start, goals)
+
+
+            if VERBOSE:
+              for t in current_treasures:
+                print (t.value, t.position)
 
           if VERBOSE:
             print("popped: ", leaf.position)
@@ -200,8 +181,12 @@ def pathfinding(filepath):
 
       # last node path cost is always the total path cost
       total_path_cost = leaf.path_cost
-      if VERBOSE:
-        print(get_path(leaf))
+      if VERBOSE or VISUAL:
+        path = get_path(leaf)
+        print(path)
+        if VISUAL:
+          print_map(3, graph, leaf, frontier, explored, walls, current_treasures, start, goals, path)
+
       # if the path cost == the distance from the closest goal to the start, you have found the fastest possible route
       if leaf.path_cost == get_closest_goal(start.position, goals):
         return get_path(leaf), total_path_cost, num_states_explored
@@ -367,13 +352,44 @@ class Node:
 
 
 
+def print_map(time, graph, leaf, frontier, explored, walls, current_treasures, start, goals, path=[]):
+  # Clear screen and move cursor to top-left
+  print("\033[2J\033[H", end="", flush=True)
+  for x in range(len(graph)):
+    for y in range(len(graph[x])):
+      if (x,y) in path:
+        print("🟥",end="")
+      
+      elif Node((x,y))==leaf:
+        print("* ",end="")
+      elif Node((x,y)) in frontier:
+        print(". ",end="")
+      elif Node((x,y)) in explored:
+        print("⊡ ",end="")
+      elif Node((x,y)) in walls:
+        print("◻️ ",end="")
+      elif Node((x,y)) in current_treasures:
+        for t in current_treasures:
+          if t == Node((x,y)):
+            print(f"{t.value} ",end="")
+      elif Node((x,y)) == start:
+        print("S ",end="")
+      elif Node((x,y)) in goals:
+        print("G ",end="")
+      else:
+        print("  ",end="")
+    print()
+  sleep(time)
+
+
+
 
 
 
 
 # show all examples
-if VERBOSE:
-  print(pathfinding(f"./Examples/Example3/grid.txt"))
+if VERBOSE or VISUAL:
+  print(pathfinding(f"./Examples/Example0/grid.txt"))
 else:
   for i in range(4):
     print("Example", i,":")
