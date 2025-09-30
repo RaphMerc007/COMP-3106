@@ -2,6 +2,8 @@
 import pandas as pd
 import heapq
 
+from pandas.core.ops import invalid
+
 # remove to see only final results
 VERBOSE = False
 
@@ -86,7 +88,7 @@ def pathfinding(filepath):
       goals_reached = False
       frontier = [leaf]
       treasure_points = 0
-
+      invalid_path = False
       # Continue until all goals reached or treasure limit hit
       while not goals_reached or treasure_points < 5:
         # reset explored nodes after a goal or treasure is reached
@@ -94,6 +96,7 @@ def pathfinding(filepath):
 
         # do not continue
         if len(frontier) == 0:
+          invalid_path = True
           break
 
         # A* search for next goal or treasure
@@ -166,7 +169,7 @@ def pathfinding(filepath):
               frontier = []
               breaking = True
               focus_treasure.focused = False
-              
+
             treasure_points += leaf.value
 
           # check all valid neighbors
@@ -192,7 +195,9 @@ def pathfinding(filepath):
           if breaking:
             break
 
-      
+      if invalid_path:
+        break
+
       # last node path cost is always the total path cost
       total_path_cost = leaf.path_cost
       if VERBOSE:
@@ -370,8 +375,10 @@ class Node:
 
 
 # show all examples
-for i in range(4):
-  print("Example", i,":")
-  print(pathfinding(f"./Examples/Example{i}/grid.txt"))
+if VERBOSE:
+  print(pathfinding(f"./Examples/Example3/grid.txt"))
+else:
+  for i in range(4):
+    print("Example", i,":")
+    print(pathfinding(f"./Examples/Example{i}/grid.txt"))
 
-# print(pathfinding(f"./Examples/Example0/grid.txt"))
