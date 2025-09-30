@@ -315,9 +315,6 @@ def heuristic(position, goals, treasures, points):
 
 # get set of closest treasures to focus on in start state
 def get_closest_treasures_num(treasures, position):
-  # this is the maximum number of treasures to be returned by the function 
-  NUMBER_OF_TREASURES_CONSIDERED = 4
-
   treasures_pq = []
   # get the treasures distances from a given positions
   for treasure in treasures:
@@ -327,7 +324,7 @@ def get_closest_treasures_num(treasures, position):
 
   # return a subset of all treasures determined by the lowest f costs
   result=[]
-  for _ in range(min(NUMBER_OF_TREASURES_CONSIDERED, len(treasures))): 
+  for _ in range(len(treasures)): 
     t = heapq.heappop(treasures_pq)
     result.append(t)
 
