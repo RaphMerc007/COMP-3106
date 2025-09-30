@@ -3,7 +3,7 @@ import pandas as pd
 import heapq
 
 # remove to see only final results
-VERBOSE = True
+VERBOSE = False
 
 # cost of moving from one node to the other
 MOVING_COST = 1
@@ -50,6 +50,7 @@ def pathfinding(filepath):
 
   # considers multiple different branches by selecting which treasure to go to first
   for focus_treasure in focus_treasures:
+
     while True:
       if VERBOSE:
         print("focused treasure:", focus_treasure.position)
@@ -68,13 +69,16 @@ def pathfinding(filepath):
             break
           # do not consider this treasure
           current_treasures.remove(t)
-
+          
           if VERBOSE:
             print("Removing:", t.position, t.value)
 
       # do not continue: focus_treasure == t
       if breaking:
         break
+
+
+
 
       focus_treasure.focused = True
       start.heuristic = heuristic(start.position, goals, current_treasures, 0)
@@ -105,6 +109,33 @@ def pathfinding(filepath):
           
           # Get node with lowest f-cost
           leaf = heapq.heappop(frontier)  
+          
+          if VERBOSE:
+            for x in range(len(graph)):
+              for y in range(len(graph[x])):
+                if Node((x,y))==leaf:
+                  print("* ",end="")
+                elif Node((x,y)) in frontier:
+                  print(". ",end="")
+                elif Node((x,y)) in explored:
+                  print("$ ",end="")
+                  
+                elif Node((x,y)) in walls:
+                  print("X ",end="")
+                elif Node((x,y)) in current_treasures:
+                  for t in current_treasures:
+                    if t == Node((x,y)):
+                      print(f"{t.value} ",end="")
+                elif Node((x,y)) == start:
+                  print("S ",end="")
+                elif Node((x,y)) in goals:
+                  print("G ",end="")
+                else:
+                  print("  ",end="")
+              print()
+            
+            for t in current_treasures:
+              print (t.value, t.position)
 
           if VERBOSE:
             print("popped: ", leaf.position)
@@ -130,11 +161,13 @@ def pathfinding(filepath):
           if leaf in current_treasures and (not focus_treasure.focused or focus_treasure == leaf):
             current_treasures.remove(leaf)
             picked_up_treasures.add(leaf)
+            if treasure_points < 5:
+              explored = []
+              frontier = []
+              breaking = True
+              focus_treasure.focused = False
+              
             treasure_points += leaf.value
-            explored = []
-            frontier = []
-            breaking = True
-            focus_treasure.focused = False
 
           # check all valid neighbors
           for node in neighbourhood(graph, explored, leaf):
@@ -162,7 +195,8 @@ def pathfinding(filepath):
       
       # last node path cost is always the total path cost
       total_path_cost = leaf.path_cost
-
+      if VERBOSE:
+        print(get_path(leaf))
       # if the path cost == the distance from the closest goal to the start, you have found the fastest possible route
       if leaf.path_cost == get_closest_goal(start.position, goals):
         return get_path(leaf), total_path_cost, num_states_explored
@@ -175,12 +209,12 @@ def pathfinding(filepath):
       # if we have treasures that were picked up but are not necessary to achieve 5 treasure points, 
       # we should try again with the same original path but without considering the extra treasures
       for t in sorted_treasures:        
-        if treasure_points - t.value >= 5:
+        if treasure_points - t.value >= 5 and not t.ignoring:
           treasure_points -= t.value
           t.ignoring = True
           retrying = True
           if VERBOSE:
-            print(t.value, "is extra")
+            print(t.value, t.position, "is extra")
       
       if retrying:
         continue
@@ -336,8 +370,8 @@ class Node:
 
 
 # show all examples
-# for i in range(4):
-#   print("Example", i,":")
-#   print(pathfinding(f"./Examples/Example{i}/grid.txt"))
+for i in range(4):
+  print("Example", i,":")
+  print(pathfinding(f"./Examples/Example{i}/grid.txt"))
 
-print(pathfinding(f"./Examples/Example3/grid.txt"))
+# print(pathfinding(f"./Examples/Example0/grid.txt"))
