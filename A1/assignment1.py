@@ -88,7 +88,7 @@ def pathfinding(filepath):
       goals_reached = False
       frontier = [leaf]
       treasure_points = 0
-      treasure_points_seen = 0
+      treasure_points_seen = set()
       invalid_path = False
       # Continue until all goals reached or treasure limit hit
       while not goals_reached or treasure_points < 5:
@@ -154,8 +154,8 @@ def pathfinding(filepath):
                   breaking = True
                 t.focused = False
                 treasure_points += leaf.value
-              if t not in picked_up_treasures:
-                treasure_points_seen += leaf.value
+              
+              treasure_points_seen.add(leaf)
 
 
           # check all valid neighbors
@@ -203,9 +203,12 @@ def pathfinding(filepath):
   
       # if we have treasures that were picked up but are not necessary to achieve 5 treasure points, 
       # we should try again with the same original path but without considering the extra treasures
+      c = 0
+      for t in treasure_points_seen:
+        c += t.value
       for t in sorted_treasures:     
-        if treasure_points_seen - t.value >= 5 and not t.ignoring:
-          treasure_points_seen -= t.value
+        if c - t.value >= 5 and not t.ignoring:
+          c -= t.value
           t.ignoring = True
           retrying = True
           if VERBOSE:
