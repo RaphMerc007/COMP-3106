@@ -42,8 +42,10 @@ def pathfinding(filepath):
         treasures.append(Node((x, y), type=cell_value))
 
   # define subset of treasures that will be attempted to grab first
-  focus_treasures = get_closest_treasures_num(treasures, start.position)
+  focus_treasures = get_treasure_lowest_priority(treasures, start.position, goals)
 
+
+  # sum of all treasures
   c=0
   for t in treasures:
     c += t.value
@@ -58,8 +60,9 @@ def pathfinding(filepath):
   
   # considers multiple different branches by selecting which treasure to go to first
   for focus_treasure in focus_treasures:
-
+    memory = focus_treasure
     while True:
+      focus_treasure = memory
       if VERBOSE:
         print("focused treasure:", focus_treasure.position)
         
@@ -73,9 +76,9 @@ def pathfinding(filepath):
           # the focused treasure is being ignored
           if focus_treasure == t:
             breaking = True
-            break
-          # do not consider this treasure
-          current_treasures.remove(t)
+          else:
+            # do not consider this treasure
+            current_treasures.remove(t)
           
           if VERBOSE:
             print("Removing:", t.position, t.value)
@@ -87,7 +90,7 @@ def pathfinding(filepath):
         break
 
       focus_treasure.focused = True
-      start.heuristic = heuristic(start.position, goals, current_treasures, 0)
+      start.heuristic = heuristic(start.position, goals, 0, focus_treasure)
       leaf = start
       goals_reached = False
       frontier = [leaf]
@@ -156,8 +159,11 @@ def pathfinding(filepath):
                   explored = []
                   frontier = []
                   breaking = True
+                  if len(current_treasures) > 0:
+                    focus_treasure = get_treasure_lowest_priority(current_treasures, start.position, goals)[0]
                 t.focused = False
                 treasure_points += leaf.value
+
               
               treasure_points_seen.add(leaf)
 
@@ -165,7 +171,7 @@ def pathfinding(filepath):
           # check all valid neighbors
           for node in neighbourhood(graph, explored, leaf):
             curr_path_cost = leaf.path_cost + MOVING_COST
-            node.heuristic = heuristic(node.position, goals, current_treasures, treasure_points)
+            node.heuristic = heuristic(node.position, goals, treasure_points, focus_treasure)
 
             leaf_fcost = curr_path_cost + leaf.heuristic
             node_fcost = node.path_cost + node.heuristic
@@ -194,7 +200,7 @@ def pathfinding(filepath):
         path = get_path(leaf)
         print(path)
         if VISUAL:
-          print_map(3, graph, leaf, frontier, explored, walls, current_treasures, start, goals, path)
+          print_map(0.1, graph, leaf, frontier, explored, walls, current_treasures, start, goals, path)
 
       # if the path cost == the distance from the closest goal to the start, you have found the fastest possible route
       if leaf.path_cost == get_distance_to_closest_goal(start.position, goals):
@@ -210,6 +216,7 @@ def pathfinding(filepath):
       c = 0
       for t in treasure_points_seen:
         c += t.value
+      
       for t in sorted_treasures:     
         if c - t.value >= TREASURE_POINTS_NEEDED and not t.ignoring:
           c -= t.value
@@ -269,6 +276,7 @@ def neighbourhood(graph, explored, leaf):
   if (y < len(graph[x])-1):  # Right
     if (graph[x][y+1] != "X" and Node((x, y+1)) not in explored):
       neighbours.append(Node((x, y+1), graph[x][y+1]))
+
   return neighbours
 
 # get the closest goal from a given position
@@ -276,16 +284,36 @@ def get_distance_to_closest_goal(position, goals):
   min_distance = float('inf')
   
   for goal in goals:
-    goal_distance = abs(position[0] - goal.position[0]) + abs(position[1] - goal.position[1])
+    goal_distance = cost(position, goal.position)
     
     if goal_distance < min_distance:
       min_distance = goal_distance
   
   return min_distance
 
+# get the treasure with the lowest priority
+def get_treasure_lowest_priority(treasures, position, goals):
+  treasures_pq = []
+  # add treasures to priority queue
+  for treasure in treasures:
+    # calculate priority
+    distance = cost(position, treasure.position)
+    priority = distance / (get_distance_to_closest_goal(treasure.position, goals)+1)
+    treasure.path_cost = priority
+    heapq.heappush(treasures_pq, treasure)
+
+  # get the treasure with the lowest priority
+  t = heapq.heappop(treasures_pq)
+  t.focused = True
+  result = []
+  
+  for treasure in treasures:
+    result.append(treasure)
+    
+  return result
 
 # determine heuristic of a given position
-def heuristic(position, goals, treasures, points):
+def heuristic(position, goals, points, focused_treasure):
   # if grabbed all treasure points, 
   # heuristic = distance from closest goal
   if points >= TREASURE_POINTS_NEEDED:
@@ -294,41 +322,11 @@ def heuristic(position, goals, treasures, points):
   # if still looking for treasures ignore, 
   # heuristic = (distance from closest treasure) / (value of closest treasure)
   else:
-    t = None
-    min_heuristic = float('inf')
-    for treasure in treasures:
-      distance = abs(position[0] - treasure.position[0]) + abs(position[1] - treasure.position[1])
-      treasure_heuristic = distance/( get_distance_to_closest_goal(treasure.position, goals)+1)
-      # if there exist a treasure which is our focus, 
-      # let the heuristic depend on this treasure
-      if treasure.focused:
-        return treasure_heuristic
+    return cost(position, focused_treasure.position)
 
-      if treasure_heuristic < min_heuristic:
-        min_heuristic = treasure_heuristic
-        t = treasure
-
-    t.focused = True
-    return min_heuristic
-
-
-# get set of closest treasures to focus on in start state
-def get_closest_treasures_num(treasures, position):
-  treasures_pq = []
-  # get the treasures distances from a given positions
-  for treasure in treasures:
-    distance = abs(position[0] - treasure.position[0]) + abs(position[1] - treasure.position[1])
-    treasure.path_cost = distance
-    heapq.heappush(treasures_pq, treasure)
-
-  # return a subset of all treasures determined by the lowest f costs
-  result=[]
-  for _ in range(len(treasures)): 
-    t = heapq.heappop(treasures_pq)
-    result.append(t)
-
-  return result
-
+# cost of moving from one node to the other
+def cost(a, b):
+  return abs(a[0] - b[0]) + abs(a[1] - b[1])
 
 class Node:
   """Node class for A* search with position, costs, and parent tracking"""
@@ -375,6 +373,7 @@ class Node:
 
 
 
+# Fancy visualization of the map
 def print_map(time, graph, leaf, frontier, explored, walls, current_treasures, start, goals, path=[]):
   # Clear screen and move cursor to top-left
   print("\033[2J\033[H", end="", flush=True)
