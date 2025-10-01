@@ -11,6 +11,8 @@ VISUAL = False
 
 # cost of moving from one node to the other
 MOVING_COST = 1
+# number of treasure points needed before reaching a goal
+TREASURE_POINTS_NEEDED = 5
 
 # The pathfinding function must implement A* search to find the goal state
 def pathfinding(filepath):
@@ -42,9 +44,11 @@ def pathfinding(filepath):
   # define subset of treasures that will be attempted to grab first
   focus_treasures = get_closest_treasures_num(treasures, start.position)
 
-
-  # if there is no start or no goals path cannot be found
-  if (start == None or len(goals) <= 0):
+  c=0
+  for t in treasures:
+    c += t.value
+  # if there is no start or no goals path cannot be found or there are no treasures to reach 5 points
+  if start == None or len(goals) <= 0 or c < TREASURE_POINTS_NEEDED:
     return False
   
   optimal_path = []
@@ -91,7 +95,7 @@ def pathfinding(filepath):
       treasure_points_seen = set()
       invalid_path = False
       # Continue until all goals reached or treasure limit hit
-      while not goals_reached or treasure_points < 5:
+      while not goals_reached or treasure_points < TREASURE_POINTS_NEEDED:
         # reset explored nodes after a goal or treasure is reached
         explored = []
 
@@ -134,7 +138,7 @@ def pathfinding(filepath):
           num_states_explored += 1
 
           # Goal reached, we can end this itteration
-          if leaf in goals and treasure_points >= 5:  
+          if leaf in goals and treasure_points >= TREASURE_POINTS_NEEDED:  
             goals_reached = True
             explored = []
             frontier = []
@@ -148,7 +152,7 @@ def pathfinding(filepath):
               if t.focused:
                 current_treasures.remove(leaf)
                 picked_up_treasures.add(leaf)
-                if treasure_points < 5:
+                if treasure_points < TREASURE_POINTS_NEEDED:
                   explored = []
                   frontier = []
                   breaking = True
@@ -207,7 +211,7 @@ def pathfinding(filepath):
       for t in treasure_points_seen:
         c += t.value
       for t in sorted_treasures:     
-        if c - t.value >= 5 and not t.ignoring:
+        if c - t.value >= TREASURE_POINTS_NEEDED and not t.ignoring:
           c -= t.value
           t.ignoring = True
           retrying = True
@@ -284,7 +288,7 @@ def get_distance_to_closest_goal(position, goals):
 def heuristic(position, goals, treasures, points):
   # if grabbed all treasure points, 
   # heuristic = distance from closest goal
-  if points >= 5:
+  if points >= TREASURE_POINTS_NEEDED:
     return get_distance_to_closest_goal(position, goals)
 
   # if still looking for treasures ignore, 
