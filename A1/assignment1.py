@@ -7,7 +7,7 @@ import heapq
 # printing frontier step by step
 VERBOSE = False
 # cool visualization
-VISUAL = False
+VISUAL = True
 
 # cost of moving from one node to the other
 MOVING_COST = 1
@@ -416,4 +416,3 @@ else:
   for i in range(4):
     print("Example", i,":")
     print(pathfinding(f"./Examples/Example{i}/grid.txt"))
-
