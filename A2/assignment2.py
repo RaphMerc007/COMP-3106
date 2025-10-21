@@ -1,3 +1,6 @@
+import pandas as pd
+import numpy as np
+
 
 def naive_bayes_classifier(dataset_filepath, snake_measurements):
   # dataset_filepath is the full file path to a CSV file containing the dataset
@@ -9,6 +12,13 @@ def naive_bayes_classifier(dataset_filepath, snake_measurements):
 
 
   # TODO: Read dataset.csv and train the model to get W
+
+  # Read dataset.csv and get the corresponding y vector and X matrix for its data
+  y, X = extract_data(dataset_filepath)
+
+  # Extract rows corresponding to a certain snake
+  # cobra_rows = X[y == "cobra"]
+  # print(cobra_rows)
   
   # TODO: read snake_measurements.txt as X
 
@@ -21,6 +31,17 @@ def naive_bayes_classifier(dataset_filepath, snake_measurements):
   return most_likely_class, class_probabilities
 
 
+# Extract data from dataset.csv, and return the corresponding y vector and X matrix
+def extract_data(dataset_filepath):
+
+  # Load CSV file and assign column names
+  csv = pd.read_csv(dataset_filepath, header=None, names=["class", "length", "weight", "speed"]) 
+
+  # Extract our labels and features seperately as an y vector and X matrix
+  y = csv["class"].values 
+  X = csv[["length", "weight", "speed"]].values
+
+  return y, X
 
 
 def probability_density_function(dataset_filepath, snake_measurements, class_name):
@@ -34,3 +55,6 @@ def get_sigma(dataset_filepath, class_name):
 def get_mu(dataset_filepath, class_name):
   #TODO: get the mean for the given class
   return
+
+
+naive_bayes_classifier(f"./Examples/Example0/dataset.csv", 0)
