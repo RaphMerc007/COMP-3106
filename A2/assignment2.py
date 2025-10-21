@@ -1,6 +1,10 @@
 import pandas as pd
 import numpy as np
 
+# Global constants
+ANACONDA = "anaconda"
+COBRA = "cobra"
+PYTHON = "python"
 
 def naive_bayes_classifier(dataset_filepath, snake_measurements):
   # dataset_filepath is the full file path to a CSV file containing the dataset
@@ -9,15 +13,21 @@ def naive_bayes_classifier(dataset_filepath, snake_measurements):
   most_likely_class = None
   class_probabilities = None
 
-
-
   # TODO: Read dataset.csv and train the model to get W
 
   # Read dataset.csv and get the corresponding y vector and X matrix for its data
   y, X = extract_data(dataset_filepath)
 
+  cobra_density = get_probability_density_function(y, X, snake_measurements, COBRA)
+  print(cobra_density)
+  conda_density = get_probability_density_function(y, X, snake_measurements, ANACONDA)
+  print(conda_density)
+  python_density = get_probability_density_function(y, X, snake_measurements, PYTHON)
+  print(python_density)
+
+
   # Extract rows corresponding to a certain snake
-  # cobra_rows = X[y == "cobra"]
+  # cobra_rows = X[y == COBRA]
   # print(cobra_rows)
   
   # TODO: read snake_measurements.txt as X
@@ -44,17 +54,19 @@ def extract_data(dataset_filepath):
   return y, X
 
 
-def probability_density_function(dataset_filepath, snake_measurements, class_name):
-  #TODO: P(feature | class) = 1/sqrt(2*pi*sigma^2) * e**(-(x-mu)^2 / (2*sigma^2))
-  return
+#TODO: P(feature | class) = 1/sqrt(2*pi*sigma^2) * e**(-(x-mu)^2 / (2*sigma^2))
+def get_probability_density_function(y, X, snake_measurements, class_name):
 
-def get_sigma(dataset_filepath, class_name):
-  #TODO: get the standard deviation for the given class
-  return
+  # Get all data rows associated with the input class
+  class_data = X[y == class_name]
 
-def get_mu(dataset_filepath, class_name):
-  #TODO: get the mean for the given class
-  return
+  # Find the means and standard deviations for all features of a given input class
+  means = class_data.mean(axis=0)
+  stds = class_data.std(axis=0)
 
+  # Calculate the probability that a feature is equal to the input snake_measurements given the input class
+  probabilities = (1 / (np.sqrt(2 * np.pi) * stds)) * np.exp(-0.5 * ((snake_measurements - means)/stds) ** 2)
 
-naive_bayes_classifier(f"./Examples/Example0/dataset.csv", 0)
+  return probabilities
+
+naive_bayes_classifier(f"./Examples/Example0/dataset.csv", [350, 42, 13])
