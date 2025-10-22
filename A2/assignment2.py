@@ -1,3 +1,4 @@
+from calendar import c
 import pandas as pd
 import numpy as np
 
@@ -11,10 +12,9 @@ def naive_bayes_classifier(dataset_filepath, snake_measurements):
   # snake_measurements is a list of [length, weight, speed] measurements for a snake
 
   most_likely_class = None
-  class_probabilities = None
+  class_probabilities = []
 
-  # TODO: Read dataset.csv and train the model to get W
-
+  
   # Read dataset.csv and get the corresponding y vector and X matrix for its data
   y, X = extract_data(dataset_filepath)
 
@@ -30,10 +30,29 @@ def naive_bayes_classifier(dataset_filepath, snake_measurements):
   # cobra_rows = X[y == COBRA]
   # print(cobra_rows)
   
-  # TODO: read snake_measurements.txt as X
 
-  # TODO: we will loop through each class and run probability density function with the snake_measurements for each class
-
+  # Calculate likelihood for each class
+  likelihoods = []
+  for class_name in [ANACONDA, COBRA, PYTHON]:
+    feature_probs = get_probability_density_function(y, X, snake_measurements, class_name)
+    # Multiply all feature probabilities together (Naive Bayes independence assumption)
+    likelihood = np.prod(feature_probs)
+    likelihoods.append(likelihood)
+  
+  # Normalize to get posterior probabilities
+  total = sum(likelihoods)
+  # Calculate posterior probabilities by normalizing likelihoods
+  class_probabilities = []
+  for likelihood in likelihoods:
+    probability = likelihood / total
+    class_probabilities.append(probability)
+  
+  # Find most likely class
+  max_prob_index = class_probabilities.index(max(class_probabilities))
+  class_names = [ANACONDA, COBRA, PYTHON]
+  most_likely_class = class_names[max_prob_index]
+  
+  print(class_probabilities)
 
   
   # most_likely_class is a string indicating the most likely class, either "anaconda", "cobra", or "python"
@@ -62,11 +81,11 @@ def get_probability_density_function(y, X, snake_measurements, class_name):
 
   # Find the means and standard deviations for all features of a given input class
   means = class_data.mean(axis=0)
-  stds = class_data.std(axis=0)
+  stds = class_data.std(axis=0, ddof=1)
 
   # Calculate the probability that a feature is equal to the input snake_measurements given the input class
   probabilities = (1 / (np.sqrt(2 * np.pi) * stds)) * np.exp(-0.5 * ((snake_measurements - means)/stds) ** 2)
 
   return probabilities
 
-naive_bayes_classifier(f"./Examples/Example0/dataset.csv", [350, 42, 13])
+print(naive_bayes_classifier(f"./Examples/Example0/dataset.csv", [350, 42, 13]))
