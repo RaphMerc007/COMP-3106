@@ -60,21 +60,23 @@ class td_qlearning:
 
 
 
-  def reward(self, state):
-    cbag, cagent, copponent, winner = self.interpret_state(state)
-
-    if winner == self.WINNER:
-      return cagent
-    elif winner == self.LOSER:
-      return -cagent
-    else:
-      return 0
 
 
-  # returns cbag, cagent, copponent, winner
-  def interpret_state(self, state):
-    cbag, cagent, copponent, winner = state.split("/")
-    return int(cbag), int(cagent), int(copponent), winner
+def reward(self, state):
+  cbag, cagent, copponent, winner = self.interpret_state(state)
+
+  if winner == self.WINNER:
+    return cagent
+  elif winner == self.LOSER:
+    return -cagent
+  else:
+    return 0
+
+
+# returns cbag, cagent, copponent, winner
+def interpret_state(self, state):
+  cbag, cagent, copponent, winner = state.split("/")
+  return int(cbag), int(cagent), int(copponent), winner
   
 
 
