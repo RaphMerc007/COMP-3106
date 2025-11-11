@@ -29,14 +29,13 @@ class td_qlearning:
           state_action_pairs.append((state, action))
 
           
-          if state not in self.qfunction:
-            self.qfunction[state] = {}
-
           if action is not None:
+            if state not in self.qfunction:
+              self.qfunction[state] = {}
+
             self.qfunction[state][action] = reward(state)
 
-          
-        
+    
 
       # Add list of state-action pairs for a trial as a new element in the trials list, representing a single trial
       self.trials.append(state_action_pairs)
@@ -51,11 +50,14 @@ class td_qlearning:
 
           # Get state action values for the "timestep" in a trial
           state, action = trial[i]
+
+          if action is not None:
+            continue
+
           next_state, _ = trial[i+1]
           next_reward_value = reward(next_state)
           
           # Apply update equation for tmeporal difference Q - learning
-          print (self.policy(next_state))
           new_q = self.qvalue(state, action) + self.alpha * (next_reward_value + self.gamma * self.policy(next_state) - self.qvalue(state, action))
 
           # Store updated q value
@@ -78,7 +80,7 @@ class td_qlearning:
 
     max_qvalue = float('-inf')
     best_action = None
-    
+
     for action in self.qfunction[state]:
       qvalue = self.qvalue(state, action)
       if qvalue > max_qvalue:
@@ -120,7 +122,7 @@ def test_td_learning():
     for line in file:
       state, expected = line.split(",")
       if td_learning.policy(state) == int(expected):
-        print("PASS")
+        print("PASS: {} == {}".format(td_learning.policy(state), int(expected)))
       else:
         print("FAIL: {} != {}".format(td_learning.policy(state), int(expected)))
   
@@ -128,7 +130,7 @@ def test_td_learning():
     for line in file:
       state, action, expected = line.split(",")
       if td_learning.qvalue(state, int(action)) == float(expected):
-        print("PASS")
+        print("PASS: {} == {}".format(td_learning.qvalue(state, int(action)), float(expected)))
       else:
         print("FAIL: {} != {}".format(td_learning.qvalue(state, int(action)), float(expected)))
 
