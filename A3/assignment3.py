@@ -7,8 +7,8 @@ class td_qlearning:
   LOSER = 'O'
   alpha = 0.10
   gamma = 0.90
-  qfunction = {}
   trials = []
+  qfunction = {}
 
   def __init__(self, directory):
     # directory is the path to a directory containing trials through state space
@@ -28,45 +28,39 @@ class td_qlearning:
 
           state_action_pairs.append((state, action))
 
+          
+          if state not in self.qfunction:
+            self.qfunction[state] = {}
+
+          if action is not None:
+            self.qfunction[state][action] = reward(state)
+
+          
+        
+
       # Add list of state-action pairs for a trial as a new element in the trials list, representing a single trial
       self.trials.append(state_action_pairs)
 
 
-    # Initialize Q - values as rewards Q(s,a) = r(s) in the qfunction dictionary (may not need this?)
-    for trial in self.trials:
-      for (state, action) in trial:
-        if action is not None:
-          self.qfunction[(state, action)] = reward(state)
+    # Train the Q-function use reward function
+    for _ in range(100):
+      for trial in self.trials:
 
-    # TODO: Train the Q-function use reward function
+        # Iterate through all state action pairs within a trial
+        for i in range(len(trial) - 1):
 
-    # store all the different trials in a list, we need to do Q laerning for every trial in the list
-    # for every tirla, we will do Q learning on each state within the list until convergence
+          # Get state action values for the "timestep" in a trial
+          state, action = trial[i]
+          next_state, _ = trial[i+1]
+          next_reward_value = reward(next_state)
+          
+          # Apply update equation for tmeporal difference Q - learning
+          print (self.policy(next_state))
+          new_q = self.qvalue(state, action) + self.alpha * (next_reward_value + self.gamma * self.policy(next_state) - self.qvalue(state, action))
 
-    # Iterate through each trial, updating Q - values
-    for trial in self.trials:
-
-      # Iterate through all state action pairs within a trial
-      for i in range(len(trial) - 1):
-
-        # Get state action values for the "timestep" in a trial
-        state, action = trial[i]
-        next_state, _ = trial[i+1]
-        reward_value = reward(next_state)
-
-        # Get current Q value, default to reward of the state if it hasn't been initialize (it should be)
-        q = self.qfunction.get((state, action), reward(state))
-
-        # Get the max Q value for the next state over all actions
-
-
-        # Apply update equation for tmeporal difference Q - learning
-        new_q = q + self.alpha * (reward_value + self.gamma * max_next_q_action - q)
-
-        # Store updated q value
-        self.qfunction[(state, action)] = new_q
-
-
+          # Store updated q value
+          if action is not None:
+            self.qfunction[state][action] = new_q
 
     # Return nothing
 
@@ -75,7 +69,7 @@ class td_qlearning:
     # action is an integer representation of an action
 
     # Return the q-value for the state-action pair
-    return self.qfunction.get((state, action), 0)
+    return self.qfunction[state][action]
 
 
 
@@ -84,13 +78,12 @@ class td_qlearning:
 
     max_qvalue = float('-inf')
     best_action = None
-
-    for (s, action), qvalue in self.qfunction.items():
-      if s == state:
-        if qvalue > max_qvalue:
-          max_qvalue = qvalue
-          best_action = action
-          # TODO: migh need to check if action is valid
+    
+    for action in self.qfunction[state]:
+      qvalue = self.qvalue(state, action)
+      if qvalue > max_qvalue:
+        max_qvalue = qvalue
+        best_action = action
 
     # Return the optimal action (as an integer) under the learned policy
     return best_action
