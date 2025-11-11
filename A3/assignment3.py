@@ -32,7 +32,7 @@ class td_qlearning:
 
           # Initializes a nested dictionary with format (state, (action, q-value))
           if action is not None:
-            #Initialize inner nested dictionary if key for current state does not exist
+            # Initialize inner nested dictionary if key for current state does not exist
             if state not in self.qfunction:
               self.qfunction[state] = {}
 
@@ -42,7 +42,7 @@ class td_qlearning:
       self.trials.append(state_action_pairs)
 
     # Train the Q-function use reward function
-    for _ in range(1000):
+    for _ in range(500):
       for trial in self.trials:
 
         # Iterate through all state action pairs within a trial
@@ -70,6 +70,7 @@ class td_qlearning:
 
           # Store updated q value
           self.qfunction[state][action] = new_q
+
 
     # Return nothing
 
@@ -129,8 +130,9 @@ def interpret_state(state):
 
 
 
+# test_td_learning() is used to test the td_qlearning class
 def test_td_learning():
-  example = 0
+  example = 1
   td_learning = td_qlearning(f"Examples/Example{example}/Trials/")
 
   print("policy tests:")
@@ -146,10 +148,10 @@ def test_td_learning():
   with open(os.path.join(f"Examples/Example{example}/qvalue_tests.csv"), 'r') as file:
     for line in file:
       state, action, expected = line.split(",")
-      if td_learning.qvalue(state, int(action)) == float(expected):
-        print("PASS: {} == {}".format(round(td_learning.qvalue(state, int(action)), 3), round(float(expected), 3)))
+      if abs(td_learning.qvalue(state, int(action)) - float(expected)) < 0.000001:
+        print("PASS: {} == {}".format(td_learning.qvalue(state, int(action)), float(expected)))
       else:
-        print("FAIL: {} != {}".format(round(td_learning.qvalue(state, int(action)), 3), round(float(expected), 3)))
+        print("FAIL: {} != {}".format(td_learning.qvalue(state, int(action)), float(expected)))
 
 
-test_td_learning()
+# test_td_learning()
