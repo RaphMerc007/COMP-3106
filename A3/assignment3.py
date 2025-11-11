@@ -40,9 +40,8 @@ class td_qlearning:
       # Add list of state-action pairs for a trial as a new element in the trials list, representing a single trial
       self.trials.append(state_action_pairs)
 
-
     # Train the Q-function use reward function
-    for _ in range(100):
+    for _ in range(50):
       for trial in self.trials:
 
         # Iterate through all state action pairs within a trial
@@ -51,18 +50,22 @@ class td_qlearning:
           # Get state action values for the "timestep" in a trial
           state, action = trial[i]
 
-          if action is not None:
+          if action is None:
             continue
-
-          next_state, _ = trial[i+1]
-          next_reward_value = reward(next_state)
           
+          next_state, next_action = trial[i+1]
+          next_reward_value = reward(next_state)
+
+          if next_action is None:
+            max_next_q = reward(next_state)
+          else:
+            max_next_q = max(self.qvalue(next_state, a) for a in self.qfunction[next_state])
+
           # Apply update equation for tmeporal difference Q - learning
-          new_q = self.qvalue(state, action) + self.alpha * (next_reward_value + self.gamma * self.policy(next_state) - self.qvalue(state, action))
+          new_q = self.qvalue(state, action) + self.alpha * (next_reward_value + self.gamma * max_next_q - self.qvalue(state, action))
 
           # Store updated q value
-          if action is not None:
-            self.qfunction[state][action] = new_q
+          self.qfunction[state][action] = new_q
 
     # Return nothing
 
@@ -133,6 +136,7 @@ def test_td_learning():
         print("PASS: {} == {}".format(td_learning.qvalue(state, int(action)), float(expected)))
       else:
         print("FAIL: {} != {}".format(td_learning.qvalue(state, int(action)), float(expected)))
+        print(td_learning.qvalue(state, int(action))/2)
 
 
 test_td_learning()
