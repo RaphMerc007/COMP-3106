@@ -1,4 +1,5 @@
 import os
+import random
 
 
 class td_qlearning:
@@ -91,7 +92,8 @@ class td_qlearning:
     best_action = None
 
     if state not in self.qfunction:
-      return 
+      # can pick any action
+      return random.randint(1, 3)
 
     for action in self.qfunction[state]:
       qvalue = self.qvalue(state, action)
