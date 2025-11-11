@@ -14,7 +14,7 @@ class td_qlearning:
     # directory is the path to a directory containing trials through state space
     trials = os.listdir(directory)
     for trial in trials:
-
+      
       # Store all state-action pairs for a single trial in a list
       state_action_pairs = []
 
@@ -41,7 +41,7 @@ class td_qlearning:
       self.trials.append(state_action_pairs)
 
     # Train the Q-function use reward function
-    for _ in range(50):
+    for _ in range(1000):
       for trial in self.trials:
 
         # Iterate through all state action pairs within a trial
@@ -57,7 +57,7 @@ class td_qlearning:
           next_reward_value = reward(next_state)
 
           if next_action is None:
-            max_next_q = reward(next_state)
+            max_next_q = 0
           else:
             max_next_q = max(self.qvalue(next_state, a) for a in self.qfunction[next_state])
 
@@ -74,6 +74,9 @@ class td_qlearning:
     # action is an integer representation of an action
 
     # Return the q-value for the state-action pair
+    if state not in self.qfunction or action not in self.qfunction[state]:
+      return reward(state)
+
     return self.qfunction[state][action]
 
 
@@ -83,6 +86,9 @@ class td_qlearning:
 
     max_qvalue = float('-inf')
     best_action = None
+
+    if state not in self.qfunction:
+      return 
 
     for action in self.qfunction[state]:
       qvalue = self.qvalue(state, action)
@@ -119,9 +125,11 @@ def interpret_state(state):
 
 
 def test_td_learning():
-  td_learning = td_qlearning("Examples/Example0/Trials/")
+  example = 1
+  td_learning = td_qlearning(f"Examples/Example{example}/Trials/")
 
-  with open(os.path.join("Examples/Example0/policy_tests.csv"), 'r') as file:
+  print("policy tests:")
+  with open(os.path.join(f"Examples/Example{example}/policy_tests.csv"), 'r') as file:
     for line in file:
       state, expected = line.split(",")
       if td_learning.policy(state) == int(expected):
@@ -129,14 +137,14 @@ def test_td_learning():
       else:
         print("FAIL: {} != {}".format(td_learning.policy(state), int(expected)))
   
-  with open(os.path.join("Examples/Example0/qvalue_tests.csv"), 'r') as file:
+  print("\nqvalue tests:")
+  with open(os.path.join(f"Examples/Example{example}/qvalue_tests.csv"), 'r') as file:
     for line in file:
       state, action, expected = line.split(",")
       if td_learning.qvalue(state, int(action)) == float(expected):
-        print("PASS: {} == {}".format(td_learning.qvalue(state, int(action)), float(expected)))
+        print("PASS: {} == {}".format(round(td_learning.qvalue(state, int(action)), 3), round(float(expected), 3)))
       else:
-        print("FAIL: {} != {}".format(td_learning.qvalue(state, int(action)), float(expected)))
-        print(td_learning.qvalue(state, int(action))/2)
+        print("FAIL: {} != {}".format(round(td_learning.qvalue(state, int(action)), 3), round(float(expected), 3)))
 
 
 test_td_learning()
