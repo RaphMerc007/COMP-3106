@@ -48,8 +48,9 @@ class td_qlearning:
         # Iterate through all state action pairs within a trial
         for i in range(len(trial) - 1):
 
-          # Get state action values for the "timestep" in a trial
+          # Get state action values for the current "timestep" in a trial
           state, action = trial[i]
+          current_reward_value = reward(state)
 
           # Terminal state reached, exit loop
           if action is None:
@@ -57,16 +58,15 @@ class td_qlearning:
           
           # Get data for the next state
           next_state, next_action = trial[i+1]
-          next_reward_value = reward(next_state)
 
           # If the next state is terminal, set q value to 0, else find max q value for an action associated with the next state
           if next_action is None:
-            max_next_q = 0
+            max_next_q = self.qvalue(next_state, None)
           else:
             max_next_q = max(self.qvalue(next_state, a) for a in self.qfunction[next_state])
 
           # Apply update equation for tmeporal difference Q - learning
-          new_q = self.qvalue(state, action) + self.alpha * (next_reward_value + self.gamma * max_next_q - self.qvalue(state, action))
+          new_q = self.qvalue(state, action) + self.alpha * (current_reward_value + self.gamma * max_next_q - self.qvalue(state, action))
 
           # Store updated q value
           self.qfunction[state][action] = new_q
@@ -130,7 +130,7 @@ def interpret_state(state):
 
 
 def test_td_learning():
-  example = 1
+  example = 0
   td_learning = td_qlearning(f"Examples/Example{example}/Trials/")
 
   print("policy tests:")
