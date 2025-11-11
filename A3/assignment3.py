@@ -18,6 +18,7 @@ class td_qlearning:
       # Store all state-action pairs for a single trial in a list
       state_action_pairs = []
 
+      # Store all trial data
       with open(os.path.join(directory, trial), 'r') as file:
         for line in file:
           state, action = line.split(",")
@@ -28,14 +29,13 @@ class td_qlearning:
 
           state_action_pairs.append((state, action))
 
-          
+          # Initializes a nested dictionary with format (state, (action, q-value))
           if action is not None:
+            #Initialize inner nested dictionary if key for current state does not exist
             if state not in self.qfunction:
               self.qfunction[state] = {}
 
             self.qfunction[state][action] = reward(state)
-
-    
 
       # Add list of state-action pairs for a trial as a new element in the trials list, representing a single trial
       self.trials.append(state_action_pairs)
@@ -50,12 +50,15 @@ class td_qlearning:
           # Get state action values for the "timestep" in a trial
           state, action = trial[i]
 
+          # Terminal state reached, exit loop
           if action is None:
             continue
           
+          # Get data for the next state
           next_state, next_action = trial[i+1]
           next_reward_value = reward(next_state)
 
+          # If the next state is terminal, set q value to 0, else find max q value for an action associated with the next state
           if next_action is None:
             max_next_q = 0
           else:
