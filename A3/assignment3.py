@@ -92,19 +92,22 @@ class td_qlearning:
     max_qvalue = float('-inf')
     best_action = None
     cbag, _, _, _ = interpret_state(state)
+    
     if cbag == 0:
       return 0
+
     if state not in self.qfunction:
-      # can pick any action
-      max_action = min(3, cbag)
-      
-      return random.randint(1, max_action)
+      return min(3, cbag)
 
     for action in self.qfunction[state]:
       qvalue = self.qvalue(state, action)
+      if qvalue == max_qvalue and action > best_action:
+        best_action = action
+        
       if qvalue > max_qvalue:
         max_qvalue = qvalue
         best_action = action
+      
 
     # Return the optimal action (as an integer) under the learned policy
     return best_action
@@ -136,7 +139,7 @@ def interpret_state(state):
 
 # test_td_learning() is used to test the td_qlearning class
 def test_td_learning():
-  example = 1
+  example = 0
   td_learning = td_qlearning(f"Examples/Example{example}/Trials/")
 
   print("policy tests:")
