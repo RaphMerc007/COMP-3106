@@ -91,10 +91,14 @@ class td_qlearning:
 
     max_qvalue = float('-inf')
     best_action = None
-
+    cbag, _, _, _ = interpret_state(state)
+    if cbag == 0:
+      return 0
     if state not in self.qfunction:
       # can pick any action
-      return random.randint(1, 3)
+      max_action = min(3, cbag)
+      
+      return random.randint(1, max_action)
 
     for action in self.qfunction[state]:
       qvalue = self.qvalue(state, action)
