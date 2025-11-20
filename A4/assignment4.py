@@ -1,24 +1,44 @@
 # Name this file assignment4.py when you submit
 import os 
-
+import math
 
 class bag_of_words_model:
+
+  vocabularyIdfValues = {}
 
   def __init__(self, directory):
     # directory is the full path to a directory containing trials through state space
 
-    # TODO; Extract and iterate through training documents
+    # Extract and iterate through training documents
     trainingDocuments = os.listdir(directory)
+    numTrainingDocuments = len(trainingDocuments)
 
+    # Iterate through each document
+    for document in trainingDocuments:
 
-    # TODO: learn document vocabulary
+      # Temporarily store all words found in current document
+      documentWords = {}
 
+      # Iterate through and store all words
+      with open(os.path.join(directory, document), 'r') as file:
+        for line in file:
+          words = line.split()
 
-    # TODO: learning idf vector
+          # Add each word that appears at least once to the dictionary of document words
+          for word in words:
+            documentWords[word] = 1
 
+      # Increment number of documents a word (key) appears in for the vocabularyIdfValues dict
+      for key in documentWords:
+        self.vocabularyIdfValues[key] = self.vocabularyIdfValues.get(key, 0) + 1
+
+    # Iterate through each word/key in vocabularyIdfValues, take its value (representing the # of documents
+    # the word appears in) and updating its value with its Idf value
+    for key in self.vocabularyIdfValues:
+      self.vocabularyIdfValues[key] = math.log2(numTrainingDocuments/self.vocabularyIdfValues[key])
+      print(key, self.vocabularyIdfValues[key])
 
     # Return nothing
-    return 0
 
 
   def tf_idf(self, document_filepath):
@@ -27,6 +47,7 @@ class bag_of_words_model:
     # TODO: grab each word in document and compute tfidf using
     # vocabulary andn idf vector computed during "training"
 
+    tf_idf_vector = 0
     # Return the term frequency-inverse document frequency vector for the document
     return tf_idf_vector
 
@@ -46,10 +67,41 @@ class bag_of_words_model:
     # function and the sum of weights * inputs
 
     # TODO : return neuron with highest score and all neuron scores
-
+    predicted_label = 0
+    scores = 0
     # Return the predicted label from the neural network model
     # Return the score from each neuron
     return predicted_label, scores
 
+# Given a document, return a dictionary representing a vector of the term frequency of each word
+def getTfVector(document_filepath):
 
-  
+  documentWords = {}
+  numWords = 0
+
+  # Extract all words and add the # of times it occurs to a dictionary
+  with open(document_filepath, 'r') as file:
+    for line in file:
+      words = line.split()
+      numWords += len(words)
+
+      # increment count of each word found in the document
+      for word in words:
+        documentWords[word] = documentWords.get(word, 0) + 1
+
+  # Use value stored in dict (# of times word appears) to get TF values for all words
+  for word in documentWords:
+    print(word, documentWords[word], numWords)
+    documentWords[word] = documentWords[word]/numWords
+
+  return documentWords
+
+# Test stuff
+def testBagOfWordsModel():
+
+  example = 0
+  # bowm = bag_of_words_model(f"Examples/Example{example}/training_documents/")
+  print(getTfVector(f"Examples/Example{example}/test_document.txt"))
+
+
+testBagOfWordsModel()
