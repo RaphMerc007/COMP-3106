@@ -40,34 +40,23 @@ class bag_of_words_model:
 
     # Return nothing
 
-
+  # Return tf-idf vector in sorted order
   def tf_idf(self, document_filepath):
     # document_filepath is the full file path to a test document
 
-    # TODO: grab each word in document and compute tfidf using
-    # vocabulary andn idf vector computed during "training"
-
     tf_idf_vector = []
 
-    # Get a dictionary contaiing the word and its corresponding tf value
+    # Get a dictionary containing the word and its corresponding tf value from the input document
     tfs = getTfDictionary(document_filepath)
     idfs = self.vocabularyIdfValues
 
-    # for word in idfs:
-      # print(word, idfs[word])
-
-    # print("------------------")
-
-    # Iterate through all words, calculating tf-idf values (tfidf = tf x idf)
-    for word in idfs:
+    # Iterate through all words in sorted order, calculating tf-idf values (tfidf = tf x idf)
+    for word in sorted(idfs.keys()):
       # Only calculate tfidf if word exists in tfs, else append 0
       if (word in tfs):
         tfIdf = idfs[word] * tfs[word]
-        # print(word, tfIdf)
         tf_idf_vector.append(tfIdf)
       else:
-        # print(word, 0)
-
         tf_idf_vector.append(0)
 
     # Return the term frequency-inverse document frequency vector for the document
@@ -80,10 +69,8 @@ class bag_of_words_model:
     # entertainment_weights is a list of weights for the entertainment artificial neuron
     # politics_weights is a list of weights for the politics artificial neuron
 
-
-    # TODO: extract weights for each neuron type (business, entertainment, politics)
-
-    # TODO: Get tf-idf for all words in the document
+    # Get tf-idf for all words in the document
+    tfIdfs = tfIdfs(document_filepath)
 
     # TODO: calculate y - hat for each neuron using the softmax activation
     # function and the sum of weights * inputs
@@ -124,6 +111,9 @@ def testBagOfWordsModel():
   file = f"Examples/Example{example}/test_document.txt"
   bowm = bag_of_words_model(f"Examples/Example{example}/training_documents/")
   # print(getTfDictionary(f"Examples/Example{example}/test_document.txt"))
-  # print(bowm.tf_idf(file))
+  print(bowm.tf_idf(file))
+
+  # TODO: extract weights for each neuron type (business, entertainment, politics)
+
 
 testBagOfWordsModel()
