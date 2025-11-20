@@ -72,7 +72,7 @@ class bag_of_words_model:
     # politics_weights is a list of weights for the politics artificial neuron
 
     # Get tf-idf for all words in the document
-    tfIdfs = tfIdfs(document_filepath)
+    tfIdfs = self.tf_idf(document_filepath)
 
     # calculate y - hat for each neuron using the sum of weights * inputs
     yHat = []
@@ -113,17 +113,37 @@ def getTfDictionary(document_filepath):
 
   return documentWords
 
-# Test stuff
+# Helper function to return a list of weights for a corresponding class type
+def extractWeights(filePath):
+  weights = []
+
+  # Open input file and append all weights to a list that gets returned
+  with open(filePath, 'r') as file:
+    for line in file:
+      weights.extend(map(float, line.split(","))) 
+
+  return weights
+
+# Test functions
 def testBagOfWordsModel():
 
-  example = 1
-  file = f"Examples/Example{example}/test_document.txt"
+  example = 0
+  documentFile = f"Examples/Example{example}/test_document.txt"
+  businessWeightsFile = f"Examples/Example{example}/business_weights.txt"
+  entertainmentWeightsFile = f"Examples/Example{example}/entertainment_weights.txt"
+  politicsWeightsFile = f"Examples/Example{example}/politics_weights.txt"
+
   bowm = bag_of_words_model(f"Examples/Example{example}/training_documents/")
   # print(getTfDictionary(f"Examples/Example{example}/test_document.txt"))
   # print(bowm.tf_idf(file))
-  print(bowm.predict())
+  # print(bowm.predict())
 
-  # TODO: extract weights for each neuron type (business, entertainment, politics)
+  # extract weights for each neuron type (business, entertainment, politics)
+  businessWeights = extractWeights(businessWeightsFile)
+  entertainmentWeights = extractWeights(entertainmentWeightsFile)
+  politicsWeights = extractWeights(politicsWeightsFile)
+
+  print(bowm.predict(documentFile, businessWeights, entertainmentWeights, politicsWeights))
 
 
-testBagOfWordsModel()
+# testBagOfWordsModel()
