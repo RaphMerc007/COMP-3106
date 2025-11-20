@@ -1,11 +1,13 @@
 # Name this file assignment4.py when you submit
 import os 
 import math
+import numpy as np
 
 class bag_of_words_model:
 
   # Stores all vocabulary words andn their corresponding idf value
   vocabularyIdfValues = {}
+  labels = ["business", "entertainment", "politics"]
 
   def __init__(self, directory):
     # directory is the full path to a directory containing trials through state space
@@ -72,12 +74,19 @@ class bag_of_words_model:
     # Get tf-idf for all words in the document
     tfIdfs = tfIdfs(document_filepath)
 
-    # TODO: calculate y - hat for each neuron using the softmax activation
-    # function and the sum of weights * inputs
+    # calculate y - hat for each neuron using the sum of weights * inputs
+    yHat = []
+    yHat.append(np.dot(business_weights, tfIdfs))
+    yHat.append(np.dot(entertainment_weights, tfIdfs))
+    yHat.append(np.dot(politics_weights, tfIdfs))
 
-    # TODO : return neuron with highest score and all neuron scores
-    predicted_label = 0
-    scores = 0
+    # Apply softmax function
+    expValues = np.exp(yHat)
+    scores = expValues / np.sum(expValues)
+
+    # Get the highest score and its corresponding label
+    predicted_label = self.labels[np.argmax(scores)]
+
     # Return the predicted label from the neural network model
     # Return the score from each neuron
     return predicted_label, scores
@@ -111,7 +120,8 @@ def testBagOfWordsModel():
   file = f"Examples/Example{example}/test_document.txt"
   bowm = bag_of_words_model(f"Examples/Example{example}/training_documents/")
   # print(getTfDictionary(f"Examples/Example{example}/test_document.txt"))
-  print(bowm.tf_idf(file))
+  # print(bowm.tf_idf(file))
+  print(bowm.predict())
 
   # TODO: extract weights for each neuron type (business, entertainment, politics)
 
