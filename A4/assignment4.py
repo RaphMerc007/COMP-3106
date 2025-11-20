@@ -4,6 +4,7 @@ import math
 
 class bag_of_words_model:
 
+  # Stores all vocabulary words andn their corresponding idf value
   vocabularyIdfValues = {}
 
   def __init__(self, directory):
@@ -36,7 +37,6 @@ class bag_of_words_model:
     # the word appears in) and updating its value with its Idf value
     for key in self.vocabularyIdfValues:
       self.vocabularyIdfValues[key] = math.log2(numTrainingDocuments/self.vocabularyIdfValues[key])
-      print(key, self.vocabularyIdfValues[key])
 
     # Return nothing
 
@@ -47,7 +47,29 @@ class bag_of_words_model:
     # TODO: grab each word in document and compute tfidf using
     # vocabulary andn idf vector computed during "training"
 
-    tf_idf_vector = 0
+    tf_idf_vector = []
+
+    # Get a dictionary contaiing the word and its corresponding tf value
+    tfs = getTfDictionary(document_filepath)
+    idfs = self.vocabularyIdfValues
+
+    # for word in idfs:
+      # print(word, idfs[word])
+
+    # print("------------------")
+
+    # Iterate through all words, calculating tf-idf values (tfidf = tf x idf)
+    for word in idfs:
+      # Only calculate tfidf if word exists in tfs, else append 0
+      if (word in tfs):
+        tfIdf = idfs[word] * tfs[word]
+        # print(word, tfIdf)
+        tf_idf_vector.append(tfIdf)
+      else:
+        # print(word, 0)
+
+        tf_idf_vector.append(0)
+
     # Return the term frequency-inverse document frequency vector for the document
     return tf_idf_vector
 
@@ -74,7 +96,7 @@ class bag_of_words_model:
     return predicted_label, scores
 
 # Given a document, return a dictionary representing a vector of the term frequency of each word
-def getTfVector(document_filepath):
+def getTfDictionary(document_filepath):
 
   documentWords = {}
   numWords = 0
@@ -91,7 +113,6 @@ def getTfVector(document_filepath):
 
   # Use value stored in dict (# of times word appears) to get TF values for all words
   for word in documentWords:
-    print(word, documentWords[word], numWords)
     documentWords[word] = documentWords[word]/numWords
 
   return documentWords
@@ -99,9 +120,10 @@ def getTfVector(document_filepath):
 # Test stuff
 def testBagOfWordsModel():
 
-  example = 0
-  # bowm = bag_of_words_model(f"Examples/Example{example}/training_documents/")
-  print(getTfVector(f"Examples/Example{example}/test_document.txt"))
-
+  example = 1
+  file = f"Examples/Example{example}/test_document.txt"
+  bowm = bag_of_words_model(f"Examples/Example{example}/training_documents/")
+  # print(getTfDictionary(f"Examples/Example{example}/test_document.txt"))
+  # print(bowm.tf_idf(file))
 
 testBagOfWordsModel()
